@@ -157,7 +157,66 @@
       background: linear-gradient(180deg, var(--brand), #0ea5a0);
     }
 
+    .task-summary {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 20px 22px 18px 26px;
+    }
+
+    .task-summary-main {
+      flex: 1;
+      min-width: 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .task-summary-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .task-summary-subtitle {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .task-summary-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .summary-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.78);
+      border: 1px solid rgba(15,118,110,0.14);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .task-summary-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .task-card.is-expanded .task-body {
+      border-top: 1px solid rgba(37,29,20,0.08);
+    }
+
     .task-body { padding: 22px 22px 20px 26px; }
+    .task-body[hidden] { display: none; }
 
     .grid {
       display: grid;
@@ -338,9 +397,9 @@
     }
 
     @media (max-width: 760px) {
-      .hero, .panel, .task-body { padding: 18px; }
-      .actions, .toolbar button { width: 100%; }
-      .actions button { flex: 1 1 100%; }
+      .hero, .panel, .task-summary, .task-body { padding: 18px; }
+      .actions, .task-summary-actions, .toolbar button { width: 100%; }
+      .actions button, .task-summary-actions button { flex: 1 1 100%; }
     }
   </style>
 </head>
@@ -412,6 +471,7 @@
     };
 
     let tasks = [];
+    let taskUiState = [];
     let symbolUiState = {};
     const contractStore = {};
 
@@ -497,6 +557,27 @@
       return EXCHANGE_META[exchange] || EXCHANGE_META.binance;
     }
 
+    function ensureTaskUiState() {
+      taskUiState = tasks.map((_, index) => ({
+        expanded: taskUiState[index] && taskUiState[index].expanded === true
+      }));
+    }
+
+    function isTaskExpanded(index) {
+      return Boolean(taskUiState[index] && taskUiState[index].expanded);
+    }
+
+    function toggleTaskExpanded(index) {
+      ensureTaskUiState();
+      taskUiState[index].expanded = !taskUiState[index].expanded;
+
+      if (!taskUiState[index].expanded) {
+        symbolUiState[index] = { open: false };
+      }
+
+      render();
+    }
+
     function getDefaultQuantityMode(task = {}) {
       if (Object.prototype.hasOwnProperty.call(task, "quantity_mode")) {
         return task.quantity_mode === "contract" ? "contract" : "margin";
@@ -541,6 +622,36 @@
       }
 
       return "按交易所原生合约数量直接下单。";
+    }
+
+    function getTaskHeading(task, index) {
+      return task.name ? task.name : `任务 ${index + 1}`;
+    }
+
+    function getTaskSubtitle(task, index) {
+      const scheduledAt = formatTaskSchedule(task.scheduled_at);
+      return task.name
+        ? `任务 ${index + 1} · 计划时间 ${scheduledAt}`
+        : `计划时间 ${scheduledAt}`;
+    }
+
+    function formatTaskSide(side) {
+      return side === "short" ? "做空" : "做多";
+    }
+
+    function getOrderTypeLabel(orderType) {
+      return orderType === "limit" ? "限价" : "市价";
+    }
+
+    function getTaskQuantityPreview(task) {
+      return task.quantity_mode === "margin"
+        ? `${task.quantity} USDT 初始保证金`
+        : `${task.quantity} 合约数量`;
+    }
+
+    function formatTaskSchedule(value) {
+      const parsed = parseDateTimeLocal(value);
+      return parsed ? formatDateTimeLocal(parsed).replace("T", " ") : "未设置";
     }
 
     function normalizeLeverageValue(value) {
@@ -764,12 +875,14 @@
 
     function addTask() {
       tasks.push(normalizeTask({ exchange: "binance", quantity_mode: "margin", quantity: 10, leverage: DEFAULT_LEVERAGE }));
+      taskUiState.push({ expanded: false });
       symbolUiState = {};
       render();
     }
 
     function removeTask(index) {
       tasks.splice(index, 1);
+      taskUiState.splice(index, 1);
       symbolUiState = {};
       render();
     }
@@ -921,23 +1034,41 @@
       const container = document.getElementById("tasks");
 
       if (!tasks.length) {
+        taskUiState = [];
         container.innerHTML = '<div class="empty">还没有任务。点击下方“添加任务”开始配置你的第一条合约下单计划。</div>';
         return;
       }
 
+      ensureTaskUiState();
       container.innerHTML = tasks.map((task, index) => {
         const meta = getExchangeMeta(task.exchange);
+        const expanded = isTaskExpanded(index);
         return `
-          <article class="task-card">
-            <div class="task-body">
-              <div class="task-head">
-                <div class="task-title-row">
-                  <h3 class="task-title">任务 ${index + 1}</h3>
+          <article class="task-card ${expanded ? "is-expanded" : ""}">
+            <div class="task-summary">
+              <div class="task-summary-main">
+                <div class="task-summary-title">
+                  <h3 class="task-title">${escapeHtml(getTaskHeading(task, index))}</h3>
                   <span class="field-badge">${task.enabled ? "已启用" : "已停用"}</span>
                 </div>
-                <button class="btn-danger btn-small" onclick="removeTask(${index})">删除</button>
+                <div class="task-summary-subtitle">${escapeHtml(getTaskSubtitle(task, index))}</div>
+                <div class="task-summary-tags">
+                  <span class="summary-chip">${escapeHtml(meta.label)}</span>
+                  <span class="summary-chip">${escapeHtml(task.symbol || meta.example)}</span>
+                  <span class="summary-chip">${formatTaskSide(task.side)}</span>
+                  <span class="summary-chip">${getOrderTypeLabel(task.order_type)}</span>
+                  <span class="summary-chip">${escapeHtml(getTaskQuantityPreview(task))}</span>
+                </div>
               </div>
+              <div class="task-summary-actions">
+                <button type="button" class="btn-ghost btn-small" onclick="toggleTaskExpanded(${index})" aria-expanded="${expanded}">
+                  ${expanded ? "收起" : "展开编辑"}
+                </button>
+                <button type="button" class="btn-danger btn-small" onclick="removeTask(${index})">删除</button>
+              </div>
+            </div>
 
+            <div class="task-body" ${expanded ? "" : "hidden"}>
               <div class="grid">
                 <div>
                   <div class="label-row"><label>名称</label></div>
@@ -1061,6 +1192,7 @@
         const config = await response.json();
         document.getElementById("enabled").checked = config.enabled !== false;
         tasks = (config.tasks || []).map(normalizeTask);
+        taskUiState = tasks.map(() => ({ expanded: false }));
         symbolUiState = {};
         render();
       } catch (error) {
@@ -1093,9 +1225,7 @@
 
     async function executeNow(index) {
       const task = normalizeTask(tasks[index]);
-      const quantityPreview = task.quantity_mode === "margin"
-        ? `${task.quantity} USDT 初始保证金`
-        : `${task.quantity} 合约数量`;
+      const quantityPreview = getTaskQuantityPreview(task);
       if (!confirm(`确认立即下单？\n${task.exchange} ${task.symbol} ${task.side} ${quantityPreview}`)) {
         return;
       }
