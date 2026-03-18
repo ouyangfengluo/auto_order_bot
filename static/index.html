@@ -355,23 +355,6 @@
     <section class="panel">
       <div class="panel-head">
         <div>
-          <h2 class="panel-title">全局开关</h2>
-          <p class="panel-note">关闭后不会继续调度任何已保存任务。</p>
-        </div>
-        <span class="pill">FastAPI + APScheduler</span>
-      </div>
-      <div class="toggle">
-        <input type="checkbox" id="enabled" checked />
-        <div>
-          <strong>启用全部定时任务</strong>
-          <div class="panel-note">配置会继续保留，重新勾选即可恢复调度。</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        <div>
           <h2 class="panel-title">任务列表</h2>
           <p class="panel-note">支持 Binance、Gate.io、Bybit 合约任务配置。</p>
         </div>
@@ -399,10 +382,28 @@
         </div>
       </div>
     </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">全局开关</h2>
+          <p class="panel-note">关闭后不会继续调度任何已保存任务。</p>
+        </div>
+        <span class="pill">FastAPI + APScheduler</span>
+      </div>
+      <div class="toggle">
+        <input type="checkbox" id="enabled" checked />
+        <div>
+          <strong>启用全部定时任务</strong>
+          <div class="panel-note">配置会继续保留，重新勾选即可恢复调度。</div>
+        </div>
+      </div>
+    </section>
   </div>
   <script>
     const API = "";
     const MAX_SYMBOL_SUGGESTIONS = 8;
+    const DEFAULT_LEVERAGE = 10;
     const EXCHANGE_META = {
       binance: { label: "Binance", example: "BTCUSDT" },
       gateio: { label: "Gate.io", example: "BTC_USDT" },
@@ -535,12 +536,17 @@
 
       if (task.quantity_mode === "margin") {
         if (task.exchange === "gateio") {
-          return "按初始保证金（USDT）下单，提交时会按最新价格和当前杠杆换算成合约张数；部分 Gate.io 合约 1 张较大，保证金过小会无法下单。";
+          return `按初始保证金（USDT）下单，提交时会按最新价格和当前杠杆换算成合约张数；默认使用 ${DEFAULT_LEVERAGE}x 杠杆，部分 Gate.io 合约 1 张较大，保证金过小会无法下单。`;
         }
-        return "按初始保证金（USDT）下单，提交时会按最新价格和当前杠杆换算成实际下单数量；杠杆留空时按 1x 计算。";
+        return `按初始保证金（USDT）下单，提交时会按最新价格和当前杠杆换算成实际下单数量；默认使用 ${DEFAULT_LEVERAGE}x 杠杆，可手动修改。`;
       }
 
       return "按交易所原生合约数量直接下单。";
+    }
+
+    function normalizeLeverageValue(value) {
+      const leverage = value === null || value === "" ? NaN : parseInt(value, 10);
+      return Number.isNaN(leverage) || leverage < 1 ? DEFAULT_LEVERAGE : leverage;
     }
 
     function normalizeTask(task = {}) {
@@ -548,7 +554,6 @@
       const quantityMode = getDefaultQuantityMode(task);
       const quantity = Number(task.quantity);
       const price = task.price === null || task.price === "" ? null : Number(task.price);
-      const leverage = task.leverage === null || task.leverage === "" ? null : parseInt(task.leverage, 10);
 
       return {
         name: task.name || "",
@@ -559,7 +564,7 @@
         side: task.side === "short" ? "short" : "long",
         order_type: task.order_type === "limit" ? "limit" : "market",
         price: Number.isNaN(price) ? null : price,
-        leverage: Number.isNaN(leverage) ? null : leverage,
+        leverage: normalizeLeverageValue(task.leverage),
         scheduled_at: normalizeDateTimeLocal(task.scheduled_at, task.cron),
         enabled: task.enabled !== false
       };
@@ -759,7 +764,7 @@
     }
 
     function addTask() {
-      tasks.push(normalizeTask({ exchange: "binance", quantity_mode: "margin", quantity: 10 }));
+      tasks.push(normalizeTask({ exchange: "binance", quantity_mode: "margin", quantity: 10, leverage: DEFAULT_LEVERAGE }));
       symbolUiState = {};
       render();
     }
@@ -875,6 +880,14 @@
 
       updateSymbolHelper(index);
       updateSymbolSuggestions(index);
+    }
+
+    function setTaskLeverage(index, value) {
+      if (!tasks[index]) {
+        return;
+      }
+
+      tasks[index].leverage = normalizeLeverageValue(value);
     }
 
     function retryLoadContracts(index) {
@@ -1000,8 +1013,11 @@
                 </div>
 
                 <div>
-                  <div class="label-row"><label>杠杆倍数</label></div>
-                  <input type="number" min="1" value="${task.leverage ?? ""}" placeholder="可选" onchange="tasks[${index}].leverage=this.value?parseInt(this.value, 10):null" />
+                  <div class="label-row">
+                    <label>杠杆倍数</label>
+                    <span class="field-badge">默认 ${DEFAULT_LEVERAGE}x</span>
+                  </div>
+                  <input type="number" min="1" value="${task.leverage}" placeholder="默认 ${DEFAULT_LEVERAGE}x" onchange="setTaskLeverage(${index}, this.value)" />
                 </div>
 
                 <div>
