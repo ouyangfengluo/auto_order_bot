@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>自动下单机器人</title>
+  <style>
+    :root {
+      --bg: #f3efe7;
+      --panel: rgba(255, 251, 243, 0.9);
+      --panel-strong: #fffdf8;
+      --border: rgba(47, 36, 20, 0.12);
+      --border-strong: rgba(47, 36, 20, 0.22);
+      --text: #261d13;
+      --muted: #766858;
+      --muted-soft: #a09282;
+      --brand: #0f766e;
+      --brand-strong: #115e59;
+      --brand-soft: rgba(15, 118, 110, 0.1);
+      --danger: #be123c;
+      --danger-soft: rgba(190, 18, 60, 0.1);
+      --shadow: 0 20px 60px rgba(58, 40, 12, 0.12);
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --radius-sm: 14px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+
+    body {
+      padding: 28px 16px 48px;
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.9), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(15,118,110,0.16), transparent 24%),
+        linear-gradient(135deg, #f3efe7, #eee3d2);
+      color: var(--text);
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    .app {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+    }
+
+    .hero,
+    .panel,
+    .task-card {
+      border: 1px solid var(--border);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero,
+    .panel {
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .hero {
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.86), rgba(255,248,236,0.9)),
+        linear-gradient(120deg, rgba(15,118,110,0.08), transparent);
+    }
+
+    .eyebrow,
+    .pill,
+    .field-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(15,118,110,0.14);
+      color: var(--brand-strong);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 12px 0 0;
+      font-size: clamp(2rem, 4.4vw, 3.2rem);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle,
+    .panel-note,
+    .footer-note,
+    .tip {
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .subtitle { margin: 14px 0 0; max-width: 720px; }
+    .panel-head,
+    .task-head,
+    .toolbar,
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .panel-title,
+    .task-title {
+      margin: 0;
+      font-size: 1.04rem;
+    }
+
+    .task-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.6);
+    }
+
+    .toggle input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--brand);
+    }
+
+    .task-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .task-card {
+      position: relative;
+      border-radius: var(--radius-md);
+      overflow: visible;
+      background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,249,239,0.82));
+    }
+
+    .task-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 6px;
+      border-radius: 18px 0 0 18px;
+      background: linear-gradient(180deg, var(--brand), #0ea5a0);
+    }
+
+    .task-body { padding: 22px 22px 20px 26px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 14px;
+    }
+
+    .field-wide { grid-column: 1 / -1; }
+    .label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    input, select, button {
+      font: inherit;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,0.92);
+      color: var(--text);
+      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+
+    input:hover, select:hover { border-color: var(--border-strong); }
+    input:focus, select:focus {
+      outline: none;
+      transform: translateY(-1px);
+      border-color: rgba(15,118,110,0.55);
+      box-shadow: 0 0 0 4px rgba(15,118,110,0.12);
+    }
+
+    .symbol-wrap { position: relative; }
+    .symbol-input {
+      font-family: "JetBrains Mono", "Cascadia Mono", monospace;
+      padding-right: 40px;
+    }
+
+    .symbol-wrap::after {
+      content: "⌕";
+      position: absolute;
+      top: 50%;
+      right: 14px;
+      transform: translateY(-50%);
+      color: var(--muted-soft);
+      pointer-events: none;
+    }
+
+    .symbol-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      z-index: 20;
+      display: grid;
+      gap: 6px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(255,252,246,0.98);
+      box-shadow: 0 18px 50px rgba(51, 33, 10, 0.16);
+    }
+
+    .symbol-menu[hidden] { display: none; }
+
+    .symbol-item,
+    .symbol-message,
+    .symbol-retry {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: rgba(255,255,255,0.78);
+      color: var(--text);
+      text-align: left;
+    }
+
+    .symbol-item,
+    .symbol-retry {
+      cursor: pointer;
+      transition: background .18s ease, border-color .18s ease, transform .18s ease;
+    }
+
+    .symbol-item:hover,
+    .symbol-retry:hover {
+      transform: translateY(-1px);
+      border-color: rgba(15,118,110,0.24);
+      background: var(--brand-soft);
+    }
+
+    .symbol-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .symbol-code {
+      font-family: "JetBrains Mono", "Cascadia Mono", monospace;
+      font-weight: 700;
+    }
+
+    .symbol-exchange {
+      color: var(--muted-soft);
+      font-size: 0.76rem;
+      white-space: nowrap;
+    }
+
+    .tip { display: block; margin-top: 7px; font-size: 0.82rem; }
+
+    .task-actions,
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--brand), #0ea5a0);
+      color: #f7fffd;
+      box-shadow: 0 14px 28px rgba(15,118,110,0.22);
+    }
+
+    .btn-secondary {
+      background: rgba(37,29,20,0.06);
+      color: var(--text);
+      border-color: rgba(37,29,20,0.08);
+    }
+
+    .btn-ghost {
+      background: rgba(255,255,255,0.78);
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .btn-danger {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border-color: rgba(190,18,60,0.16);
+    }
+
+    .btn-small { padding: 8px 14px; font-size: 0.84rem; }
+
+    .empty {
+      padding: 28px;
+      text-align: center;
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius-md);
+      background: rgba(255,255,255,0.55);
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    @media (max-width: 760px) {
+      .hero, .panel, .task-body { padding: 18px; }
+      .actions, .toolbar button { width: 100%; }
+      .actions button { flex: 1 1 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="hero">
+      <span class="eyebrow">Perpetual Order Scheduler</span>
+      <h1>自动下单机器人</h1>
+      <p class="subtitle">点击合约币对输入框会懒加载当前交易所全部合约，输入时会根据关键词实时联想匹配的合约。</p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">全局开关</h2>
+          <p class="panel-note">关闭后不会继续调度任何已保存任务。</p>
+        </div>
+        <span class="pill">FastAPI + APScheduler</span>
+      </div>
+      <div class="toggle">
+        <input type="checkbox" id="enabled" checked />
+        <div>
+          <strong>启用全部定时任务</strong>
+          <div class="panel-note">配置会继续保留，重新勾选即可恢复调度。</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2 class="panel-title">任务列表</h2>
+          <p class="panel-note">支持 Binance、Gate.io、Bybit 合约任务配置。</p>
+        </div>
+        <span class="pill">Symbol Search Ready</span>
+      </div>
+      <div id="tasks" class="task-list"></div>
+    </section>
+
+    <section class="panel">
+      <div class="toolbar">
+        <div>
+          <h2 class="panel-title">新增任务</h2>
+          <p class="panel-note">建议先选择交易所，再点击币对输入框加载合约列表。</p>
+        </div>
+        <button class="btn-primary" onclick="addTask()">+ 添加任务</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="footer">
+        <div class="footer-note">保存后会立即同步新的调度计划。币对输入支持大小写自动统一，并优先展示最相关的匹配项。</div>
+        <div class="actions">
+          <button class="btn-primary" onclick="saveConfig()">保存配置</button>
+          <button class="btn-secondary" onclick="loadConfig()">刷新</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+    const API = "";
+    const MAX_SYMBOL_SUGGESTIONS = 8;
+    const EXCHANGE_META = {
+      binance: { label: "Binance", example: "BTCUSDT" },
+      gateio: { label: "Gate.io", example: "BTC_USDT" },
+      bybit: { label: "Bybit", example: "BTCUSDT" },
+      okx: { label: "OKX", example: "BTC-USDT-SWAP" },
+      lighter: { label: "Lighter", example: "BTC" }
+    };
+
+    let tasks = [];
+    let symbolUiState = {};
+    const contractStore = {};
+
+    function pad(value) {
+      return String(value).padStart(2, "0");
+    }
+
+    function formatDateTimeLocal(date) {
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+    }
+
+    function getCurrentDateTimeLocal() {
+      const now = new Date();
+      now.setMilliseconds(0);
+      return formatDateTimeLocal(now);
+    }
+
+    function parseDateTimeLocal(value) {
+      if (!value) {
+        return null;
+      }
+
+      const normalized = String(value).trim().replace(" ", "T");
+      const date = new Date(normalized);
+      if (Number.isNaN(date.getTime())) {
+        return null;
+      }
+
+      date.setMilliseconds(0);
+      return date;
+    }
+
+    function legacyCronToDateTime(value) {
+      const cron = String(value || "").trim();
+      if (!cron || cron.includes(" ")) {
+        return "";
+      }
+
+      const parts = cron.split(":");
+      if (parts.length !== 2 && parts.length !== 3) {
+        return "";
+      }
+
+      const hour = Number(parts[0]);
+      const minute = Number(parts[1]);
+      const second = Number(parts[2] || 0);
+      if ([hour, minute, second].some(Number.isNaN)) {
+        return "";
+      }
+
+      const now = new Date();
+      const scheduledAt = new Date(now);
+      scheduledAt.setHours(hour, minute, second, 0);
+      if (scheduledAt.getTime() < now.getTime()) {
+        scheduledAt.setDate(scheduledAt.getDate() + 1);
+      }
+
+      return formatDateTimeLocal(scheduledAt);
+    }
+
+    function normalizeDateTimeLocal(value, legacyCron) {
+      const parsed = parseDateTimeLocal(value) || parseDateTimeLocal(legacyCronToDateTime(legacyCron));
+      return parsed ? formatDateTimeLocal(parsed) : getCurrentDateTimeLocal();
+    }
+
+    function normalizeSymbolInput(value) {
+      return String(value || "").trim().toUpperCase().replace(/\s+/g, "");
+    }
+
+    function escapeHtml(value) {
+      if (value == null) {
+        return "";
+      }
+
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function getExchangeMeta(exchange) {
+      return EXCHANGE_META[exchange] || EXCHANGE_META.binance;
+    }
+
+    function getDefaultQuantityMode(task = {}) {
+      if (Object.prototype.hasOwnProperty.call(task, "quantity_mode")) {
+        return task.quantity_mode === "contract" ? "contract" : "margin";
+      }
+      return "contract";
+    }
+
+    function getDefaultQuantityValue(quantityMode, exchange = "binance") {
+      if (quantityMode === "margin") {
+        return 10;
+      }
+      if (exchange === "gateio") {
+        return 1;
+      }
+      if (exchange === "okx") {
+        return 0.01;
+      }
+      if (exchange === "lighter") {
+        return 0.001;
+      }
+      return 0.001;
+    }
+
+    function getQuantityLabel(quantityMode) {
+      return quantityMode === "margin" ? "初始保证金" : "合约数量";
+    }
+
+    function getQuantityPlaceholder(quantityMode) {
+      return quantityMode === "margin" ? "例如 10 USDT" : "例如 0.01";
+    }
+
+    function getQuantityHint(task) {
+      if (!task) {
+        return "";
+      }
+
+      if (task.quantity_mode === "margin") {
+        if (task.exchange === "gateio") {
+          return "按初始保证金（USDT）下单，提交时会按最新价格和当前杠杆换算成合约张数；部分 Gate.io 合约 1 张较大，保证金过小会无法下单。";
+        }
+        return "按初始保证金（USDT）下单，提交时会按最新价格和当前杠杆换算成实际下单数量；杠杆留空时按 1x 计算。";
+      }
+
+      return "按交易所原生合约数量直接下单。";
+    }
+
+    function normalizeTask(task = {}) {
+      const exchange = task.exchange || "binance";
+      const quantityMode = getDefaultQuantityMode(task);
+      const quantity = Number(task.quantity);
+      const price = task.price === null || task.price === "" ? null : Number(task.price);
+      const leverage = task.leverage === null || task.leverage === "" ? null : parseInt(task.leverage, 10);
+
+      return {
+        name: task.name || "",
+        exchange,
+        symbol: normalizeSymbolInput(task.symbol) || getExchangeMeta(exchange).example,
+        quantity_mode: quantityMode,
+        quantity: Number.isNaN(quantity) ? getDefaultQuantityValue(quantityMode, exchange) : quantity,
+        side: task.side === "short" ? "short" : "long",
+        order_type: task.order_type === "limit" ? "limit" : "market",
+        price: Number.isNaN(price) ? null : price,
+        leverage: Number.isNaN(leverage) ? null : leverage,
+        scheduled_at: normalizeDateTimeLocal(task.scheduled_at, task.cron),
+        enabled: task.enabled !== false
+      };
+    }
+
+    function getContractState(exchange) {
+      if (!contractStore[exchange]) {
+        contractStore[exchange] = {
+          symbols: [],
+          loading: false,
+          loaded: false,
+          stale: false,
+          error: "",
+          updatedAt: "",
+          promise: null
+        };
+      }
+      return contractStore[exchange];
+    }
+
+    function buildSymbolTip(index) {
+      const task = tasks[index];
+      if (!task) {
+        return "";
+      }
+
+      const meta = getExchangeMeta(task.exchange);
+      const state = getContractState(task.exchange);
+
+      if (state.loading) {
+        return `正在加载 ${meta.label} 合约列表... 格式示例 ${meta.example}`;
+      }
+
+      if (state.error && !state.loaded) {
+        return `加载失败：${state.error}。再次点击输入框可重试。`;
+      }
+
+      if (state.loaded) {
+        return `已加载 ${state.symbols.length} 个 ${meta.label} 合约${state.stale ? "（缓存）" : ""}，格式示例 ${meta.example}`;
+      }
+
+      return `点击输入框后加载 ${meta.label} 当前全部合约，格式示例 ${meta.example}`;
+    }
+
+    function updateSymbolHelper(index) {
+      const tip = document.getElementById(`symbol-tip-${index}`);
+      if (tip) {
+        tip.textContent = buildSymbolTip(index);
+      }
+    }
+
+    function renderSymbolMessage(message) {
+      return `<div class="symbol-message">${escapeHtml(message)}</div>`;
+    }
+
+    function getSymbolMatches(symbols, query) {
+      const normalizedQuery = normalizeSymbolInput(query);
+      if (!normalizedQuery) {
+        return [];
+      }
+
+      const exact = [];
+      const prefix = [];
+      const compactPrefix = [];
+      const contains = [];
+
+      for (const symbol of symbols) {
+        const upper = symbol.toUpperCase();
+        const compact = upper.replace(/[_-]/g, "");
+
+        if (upper === normalizedQuery) {
+          exact.push(symbol);
+        } else if (upper.startsWith(normalizedQuery)) {
+          prefix.push(symbol);
+        } else if (compact.startsWith(normalizedQuery.replace(/[_-]/g, ""))) {
+          compactPrefix.push(symbol);
+        } else if (upper.includes(normalizedQuery)) {
+          contains.push(symbol);
+        }
+      }
+
+      prefix.sort((a, b) => a.length - b.length || a.localeCompare(b));
+      compactPrefix.sort((a, b) => a.length - b.length || a.localeCompare(b));
+      contains.sort((a, b) => a.indexOf(normalizedQuery) - b.indexOf(normalizedQuery) || a.length - b.length || a.localeCompare(b));
+
+      return [...exact, ...prefix, ...compactPrefix, ...contains].slice(0, MAX_SYMBOL_SUGGESTIONS);
+    }
+
+    function updateSymbolSuggestions(index) {
+      const panel = document.getElementById(`symbol-panel-${index}`);
+      const task = tasks[index];
+      if (!panel || !task) {
+        return;
+      }
+
+      const state = getContractState(task.exchange);
+      const meta = getExchangeMeta(task.exchange);
+      const query = normalizeSymbolInput(task.symbol);
+      const isOpen = Boolean(symbolUiState[index] && symbolUiState[index].open);
+
+      if (!isOpen) {
+        panel.hidden = true;
+        panel.innerHTML = "";
+        return;
+      }
+
+      if (state.loading) {
+        panel.hidden = false;
+        panel.innerHTML = renderSymbolMessage(`正在拉取 ${meta.label} 合约列表，请稍候...`);
+        return;
+      }
+
+      if (state.error && !state.loaded) {
+        panel.hidden = false;
+        panel.innerHTML = `${renderSymbolMessage(`加载失败：${state.error}`)}<button type="button" class="symbol-retry" onmousedown="retryLoadContracts(${index}); return false;">重新加载合约列表</button>`;
+        return;
+      }
+
+      if (!state.loaded) {
+        panel.hidden = false;
+        panel.innerHTML = renderSymbolMessage(`点击后会加载 ${meta.label} 当前全部合约，随后即可输入筛选。`);
+        return;
+      }
+
+      if (!query) {
+        panel.hidden = false;
+        panel.innerHTML = renderSymbolMessage(`已加载 ${state.symbols.length} 个 ${meta.label} 合约，输入关键词开始筛选。`);
+        return;
+      }
+
+      const matches = getSymbolMatches(state.symbols, query);
+      if (!matches.length) {
+        panel.hidden = false;
+        panel.innerHTML = renderSymbolMessage(`没有找到与 ${query} 匹配的合约。`);
+        return;
+      }
+
+      panel.hidden = false;
+      panel.innerHTML = matches.map((symbol) => `
+        <button type="button" class="symbol-item" onmousedown="selectSymbol(${index}, '${symbol}'); return false;">
+          <span class="symbol-code">${escapeHtml(symbol)}</span>
+          <span class="symbol-exchange">${meta.label}</span>
+        </button>
+      `).join("");
+    }
+
+    async function ensureContractsLoaded(exchange, options = {}) {
+      const state = getContractState(exchange);
+      const refresh = options.refresh === true;
+
+      if (state.loading && state.promise) {
+        return state.promise;
+      }
+
+      if (state.loaded && !refresh) {
+        return state.symbols;
+      }
+
+      state.loading = true;
+      state.error = "";
+      const url = `${API}/api/contracts?exchange=${encodeURIComponent(exchange)}${refresh ? "&refresh=true" : ""}`;
+
+      state.promise = fetch(url)
+        .then(async (response) => {
+          if (!response.ok) {
+            const text = await response.text();
+            throw new Error(text || "请求失败");
+          }
+          return response.json();
+        })
+        .then((payload) => {
+          state.symbols = Array.isArray(payload.symbols) ? payload.symbols : [];
+          state.loaded = true;
+          state.stale = payload.stale === true;
+          state.updatedAt = payload.updated_at || "";
+          state.error = payload.message || "";
+          return state.symbols;
+        })
+        .catch((error) => {
+          state.error = error.message || "未知错误";
+          throw error;
+        })
+        .finally(() => {
+          state.loading = false;
+          state.promise = null;
+          syncAllSymbolHelpers();
+        });
+
+      return state.promise;
+    }
+
+    function syncAllSymbolHelpers() {
+      tasks.forEach((_, index) => {
+        updateSymbolHelper(index);
+        updateSymbolSuggestions(index);
+      });
+    }
+
+    function addTask() {
+      tasks.push(normalizeTask({ exchange: "binance", quantity_mode: "margin", quantity: 10 }));
+      symbolUiState = {};
+      render();
+    }
+
+    function removeTask(index) {
+      tasks.splice(index, 1);
+      symbolUiState = {};
+      render();
+    }
+
+    function setTaskExchange(index, nextExchange) {
+      const task = tasks[index];
+      if (!task) {
+        return;
+      }
+
+      const previousExample = getExchangeMeta(task.exchange).example;
+      task.exchange = nextExchange;
+      if (!task.symbol || task.symbol === previousExample) {
+        task.symbol = getExchangeMeta(nextExchange).example;
+      }
+
+      const input = document.getElementById(`symbol-input-${index}`);
+      if (input) {
+        input.value = task.symbol;
+      }
+
+      updateSymbolHelper(index);
+      updateSymbolSuggestions(index);
+      ensureContractsLoaded(nextExchange).catch(() => {
+        updateSymbolHelper(index);
+        updateSymbolSuggestions(index);
+      });
+    }
+
+    function setTaskQuantityMode(index, nextMode) {
+      const task = tasks[index];
+      if (!task) {
+        return;
+      }
+
+      task.quantity_mode = nextMode === "contract" ? "contract" : "margin";
+      if (!task.quantity || task.quantity <= 0) {
+        task.quantity = getDefaultQuantityValue(task.quantity_mode, task.exchange);
+      }
+      render();
+    }
+
+    function handleSymbolFocus(index) {
+      symbolUiState[index] = { open: true };
+      updateSymbolHelper(index);
+      updateSymbolSuggestions(index);
+
+      ensureContractsLoaded(tasks[index].exchange).catch(() => {
+        updateSymbolHelper(index);
+        updateSymbolSuggestions(index);
+      });
+    }
+
+    function handleSymbolInput(index, value) {
+      const task = tasks[index];
+      if (!task) {
+        return;
+      }
+
+      const normalizedValue = normalizeSymbolInput(value);
+      task.symbol = normalizedValue;
+      symbolUiState[index] = { open: true };
+
+      const input = document.getElementById(`symbol-input-${index}`);
+      if (input && input.value !== normalizedValue) {
+        input.value = normalizedValue;
+        input.setSelectionRange(normalizedValue.length, normalizedValue.length);
+      }
+
+      updateSymbolHelper(index);
+      updateSymbolSuggestions(index);
+
+      const state = getContractState(task.exchange);
+      if (!state.loaded && !state.loading) {
+        ensureContractsLoaded(task.exchange).catch(() => {
+          updateSymbolHelper(index);
+          updateSymbolSuggestions(index);
+        });
+      }
+    }
+
+    function handleSymbolBlur(index) {
+      window.setTimeout(() => {
+        if (!symbolUiState[index]) {
+          symbolUiState[index] = {};
+        }
+        symbolUiState[index].open = false;
+        updateSymbolSuggestions(index);
+      }, 120);
+    }
+
+    function selectSymbol(index, symbol) {
+      const task = tasks[index];
+      if (!task) {
+        return;
+      }
+
+      task.symbol = symbol;
+      symbolUiState[index] = { open: false };
+
+      const input = document.getElementById(`symbol-input-${index}`);
+      if (input) {
+        input.value = symbol;
+        input.focus();
+        input.setSelectionRange(symbol.length, symbol.length);
+      }
+
+      updateSymbolHelper(index);
+      updateSymbolSuggestions(index);
+    }
+
+    function retryLoadContracts(index) {
+      const task = tasks[index];
+      if (!task) {
+        return;
+      }
+
+      symbolUiState[index] = { open: true };
+      updateSymbolHelper(index);
+      updateSymbolSuggestions(index);
+
+      ensureContractsLoaded(task.exchange, { refresh: true }).catch(() => {
+        updateSymbolHelper(index);
+        updateSymbolSuggestions(index);
+      });
+    }
+
+    function setTaskToNow(index) {
+      tasks[index].scheduled_at = getCurrentDateTimeLocal();
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById("tasks");
+
+      if (!tasks.length) {
+        container.innerHTML = '<div class="empty">还没有任务。点击下方“添加任务”开始配置你的第一条合约下单计划。</div>';
+        return;
+      }
+
+      container.innerHTML = tasks.map((task, index) => {
+        const meta = getExchangeMeta(task.exchange);
+        return `
+          <article class="task-card">
+            <div class="task-body">
+              <div class="task-head">
+                <div class="task-title-row">
+                  <h3 class="task-title">任务 ${index + 1}</h3>
+                  <span class="field-badge">${task.enabled ? "已启用" : "已停用"}</span>
+                </div>
+                <button class="btn-danger btn-small" onclick="removeTask(${index})">删除</button>
+              </div>
+
+              <div class="grid">
+                <div>
+                  <div class="label-row"><label>名称</label></div>
+                  <input value="${escapeHtml(task.name)}" onchange="tasks[${index}].name=this.value" placeholder="例如：今晚 BTC 开多" />
+                </div>
+
+                <div>
+                  <div class="label-row"><label>交易所</label></div>
+                  <select onchange="setTaskExchange(${index}, this.value)">
+                    <option value="binance" ${task.exchange === "binance" ? "selected" : ""}>Binance</option>
+                    <option value="gateio" ${task.exchange === "gateio" ? "selected" : ""}>Gate.io</option>
+                    <option value="bybit" ${task.exchange === "bybit" ? "selected" : ""}>Bybit</option>
+                    <option value="okx" ${task.exchange === "okx" ? "selected" : ""}>OKX</option>
+                    <option value="lighter" ${task.exchange === "lighter" ? "selected" : ""}>Lighter</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div class="label-row"><label>数量类型</label></div>
+                  <select onchange="setTaskQuantityMode(${index}, this.value)">
+                    <option value="margin" ${task.quantity_mode === "margin" ? "selected" : ""}>初始保证金</option>
+                    <option value="contract" ${task.quantity_mode === "contract" ? "selected" : ""}>合约数量</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div class="label-row"><label>${getQuantityLabel(task.quantity_mode)}</label></div>
+                  <input
+                    type="number"
+                    step="0.001"
+                    value="${task.quantity}"
+                    placeholder="${getQuantityPlaceholder(task.quantity_mode)}"
+                    onchange="tasks[${index}].quantity=Number(this.value)"
+                  />
+                  <span class="tip">${escapeHtml(getQuantityHint(task))}</span>
+                </div>
+
+                <div>
+                  <div class="label-row"><label>方向</label></div>
+                  <select onchange="tasks[${index}].side=this.value">
+                    <option value="long" ${task.side === "long" ? "selected" : ""}>做多</option>
+                    <option value="short" ${task.side === "short" ? "selected" : ""}>做空</option>
+                  </select>
+                </div>
+
+                <div class="field-wide">
+                  <div class="label-row">
+                    <label>合约币对</label>
+                    <span class="field-badge">${meta.label}</span>
+                  </div>
+                  <div class="symbol-wrap">
+                    <input
+                      id="symbol-input-${index}"
+                      class="symbol-input"
+                      autocomplete="off"
+                      spellcheck="false"
+                      value="${escapeHtml(task.symbol)}"
+                      placeholder="${meta.example}"
+                      onfocus="handleSymbolFocus(${index})"
+                      oninput="handleSymbolInput(${index}, this.value)"
+                      onblur="handleSymbolBlur(${index})"
+                    />
+                    <div class="symbol-menu" id="symbol-panel-${index}" hidden></div>
+                  </div>
+                  <span class="tip" id="symbol-tip-${index}">${escapeHtml(buildSymbolTip(index))}</span>
+                </div>
+
+                <div>
+                  <div class="label-row"><label>订单类型</label></div>
+                  <select onchange="tasks[${index}].order_type=this.value">
+                    <option value="market" ${task.order_type === "market" ? "selected" : ""}>市价</option>
+                    <option value="limit" ${task.order_type === "limit" ? "selected" : ""}>限价</option>
+                  </select>
+                </div>
+
+                <div>
+                  <div class="label-row"><label>限价</label></div>
+                  <input type="number" step="0.01" value="${task.price ?? ""}" placeholder="市价单可留空" onchange="tasks[${index}].price=this.value?Number(this.value):null" />
+                </div>
+
+                <div>
+                  <div class="label-row"><label>杠杆倍数</label></div>
+                  <input type="number" min="1" value="${task.leverage ?? ""}" placeholder="可选" onchange="tasks[${index}].leverage=this.value?parseInt(this.value, 10):null" />
+                </div>
+
+                <div>
+                  <div class="label-row"><label>是否启用</label></div>
+                  <select onchange="tasks[${index}].enabled=this.value==='true'">
+                    <option value="true" ${task.enabled ? "selected" : ""}>启用</option>
+                    <option value="false" ${task.enabled ? "" : "selected"}>停用</option>
+                  </select>
+                </div>
+
+                <div class="field-wide">
+                  <div class="label-row"><label>下单时间</label></div>
+                  <input type="datetime-local" step="1" value="${escapeHtml(task.scheduled_at)}" onchange="tasks[${index}].scheduled_at=this.value" />
+                  <span class="tip">支持精确到秒，保存后会立即同步调度。</span>
+                </div>
+              </div>
+
+              <div class="task-actions">
+                <button class="btn-ghost btn-small" onclick="setTaskToNow(${index})">设为当前时间</button>
+                <button class="btn-primary btn-small" onclick="executeNow(${index})">立即执行</button>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    async function loadConfig() {
+      try {
+        const response = await fetch(`${API}/api/config`);
+        if (!response.ok) {
+          throw new Error("配置加载失败");
+        }
+        const config = await response.json();
+        document.getElementById("enabled").checked = config.enabled !== false;
+        tasks = (config.tasks || []).map(normalizeTask);
+        symbolUiState = {};
+        render();
+      } catch (error) {
+        alert(`加载失败: ${error.message}`);
+      }
+    }
+
+    async function saveConfig() {
+      try {
+        tasks = tasks.map(normalizeTask);
+        const response = await fetch(`${API}/api/config`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tasks,
+            enabled: document.getElementById("enabled").checked
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error("保存请求失败");
+        }
+
+        render();
+        alert("保存成功");
+      } catch (error) {
+        alert(`保存失败: ${error.message}`);
+      }
+    }
+
+    async function executeNow(index) {
+      const task = normalizeTask(tasks[index]);
+      const quantityPreview = task.quantity_mode === "margin"
+        ? `${task.quantity} USDT 初始保证金`
+        : `${task.quantity} 合约数量`;
+      if (!confirm(`确认立即下单？\n${task.exchange} ${task.symbol} ${task.side} ${quantityPreview}`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API}/api/execute`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(task)
+        });
+        const result = await response.json();
+        alert(result.success ? `成功: ${result.order_id || result.message}` : `失败: ${result.message}`);
+      } catch (error) {
+        alert(`执行失败: ${error.message}`);
+      }
+    }
+
+    loadConfig();
+  </script>
+</body>
+</html>

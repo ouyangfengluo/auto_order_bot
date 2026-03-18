@@ -1,0 +1,1094 @@
+[
+  {
+    "symbol": "0G",
+    "market_id": 84,
+    "min_base_amount": "1.00",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "1000BONK",
+    "market_id": 18,
+    "min_base_amount": "500",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "1000FLOKI",
+    "market_id": 19,
+    "min_base_amount": "100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "1000PEPE",
+    "market_id": 4,
+    "min_base_amount": "500",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "1000SHIB",
+    "market_id": 17,
+    "min_base_amount": "500",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "1000TOSHI",
+    "market_id": 81,
+    "min_base_amount": "1.00",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "2Z",
+    "market_id": 88,
+    "min_base_amount": "15.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "AAPL",
+    "market_id": 113,
+    "min_base_amount": "0.050",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "AAVE",
+    "market_id": 27,
+    "min_base_amount": "0.050",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "ADA",
+    "market_id": 39,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "AERO",
+    "market_id": 65,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "AI16Z",
+    "market_id": 22,
+    "min_base_amount": "20.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "AMD",
+    "market_id": 138,
+    "min_base_amount": "0.0300",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "AMZN",
+    "market_id": 114,
+    "min_base_amount": "0.050",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "APEX",
+    "market_id": 86,
+    "min_base_amount": "5.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "APT",
+    "market_id": 31,
+    "min_base_amount": "2.00",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "ARB",
+    "market_id": 50,
+    "min_base_amount": "20.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "ARC",
+    "market_id": 132,
+    "min_base_amount": "80",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "ASML",
+    "market_id": 151,
+    "min_base_amount": "0.00400",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 5
+  },
+  {
+    "symbol": "ASTER",
+    "market_id": 83,
+    "min_base_amount": "20.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "AUDUSD",
+    "market_id": 106,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "AVAX",
+    "market_id": 9,
+    "min_base_amount": "0.50",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "AVNT",
+    "market_id": 82,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "AXS",
+    "market_id": 131,
+    "min_base_amount": "2.00",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "AZTEC",
+    "market_id": 144,
+    "min_base_amount": "400",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "BCH",
+    "market_id": 58,
+    "min_base_amount": "0.010",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "BERA",
+    "market_id": 20,
+    "min_base_amount": "3.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "BIRB",
+    "market_id": 133,
+    "min_base_amount": "25.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "BMNR",
+    "market_id": 123,
+    "min_base_amount": "0.250",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "BNB",
+    "market_id": 25,
+    "min_base_amount": "0.02",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "BOTZ",
+    "market_id": 154,
+    "min_base_amount": "0.150",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "BTC",
+    "market_id": 1,
+    "min_base_amount": "0.00020",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 5
+  },
+  {
+    "symbol": "CC",
+    "market_id": 101,
+    "min_base_amount": "30.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "COIN",
+    "market_id": 109,
+    "min_base_amount": "0.025",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "CRCL",
+    "market_id": 121,
+    "min_base_amount": "0.100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "CRO",
+    "market_id": 73,
+    "min_base_amount": "20.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "CRV",
+    "market_id": 36,
+    "min_base_amount": "20.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "DASH",
+    "market_id": 127,
+    "min_base_amount": "0.100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "DIA",
+    "market_id": 152,
+    "min_base_amount": "0.0100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "DOGE",
+    "market_id": 3,
+    "min_base_amount": "10",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "DOLO",
+    "market_id": 75,
+    "min_base_amount": "30.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "DOT",
+    "market_id": 11,
+    "min_base_amount": "2.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "DUSK",
+    "market_id": 125,
+    "min_base_amount": "25.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "DYDX",
+    "market_id": 62,
+    "min_base_amount": "15.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "EDEN",
+    "market_id": 89,
+    "min_base_amount": "15.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "EIGEN",
+    "market_id": 49,
+    "min_base_amount": "5.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "ENA",
+    "market_id": 29,
+    "min_base_amount": "20.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "ETH",
+    "market_id": 0,
+    "min_base_amount": "0.0050",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "ETHFI",
+    "market_id": 64,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "EURUSD",
+    "market_id": 96,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "FARTCOIN",
+    "market_id": 21,
+    "min_base_amount": "20.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "FF",
+    "market_id": 87,
+    "min_base_amount": "15.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "FIL",
+    "market_id": 103,
+    "min_base_amount": "5.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "FOGO",
+    "market_id": 124,
+    "min_base_amount": "200",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "GBPUSD",
+    "market_id": 97,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "GMX",
+    "market_id": 61,
+    "min_base_amount": "0.30",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "GOOGL",
+    "market_id": 116,
+    "min_base_amount": "0.0300",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "GRASS",
+    "market_id": 52,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "HANMI",
+    "market_id": 148,
+    "min_base_amount": "0.000030",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 6
+  },
+  {
+    "symbol": "HBAR",
+    "market_id": 59,
+    "min_base_amount": "20.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "HOOD",
+    "market_id": 108,
+    "min_base_amount": "0.100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "HYPE",
+    "market_id": 24,
+    "min_base_amount": "0.50",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "HYUNDAI",
+    "market_id": 141,
+    "min_base_amount": "0.000010",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 6
+  },
+  {
+    "symbol": "ICP",
+    "market_id": 102,
+    "min_base_amount": "0.60",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "INTC",
+    "market_id": 137,
+    "min_base_amount": "0.100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "IP",
+    "market_id": 34,
+    "min_base_amount": "2.00",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "IWM",
+    "market_id": 153,
+    "min_base_amount": "0.0100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "JTO",
+    "market_id": 134,
+    "min_base_amount": "20.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "JUP",
+    "market_id": 26,
+    "min_base_amount": "15.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "KAITO",
+    "market_id": 33,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "KRCOMP",
+    "market_id": 142,
+    "min_base_amount": "0.00250",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 5
+  },
+  {
+    "symbol": "LAUNCHCOIN",
+    "market_id": 54,
+    "min_base_amount": "100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "LDO",
+    "market_id": 46,
+    "min_base_amount": "5.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "LINEA",
+    "market_id": 76,
+    "min_base_amount": "100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "LINK",
+    "market_id": 8,
+    "min_base_amount": "1.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "LIT",
+    "market_id": 120,
+    "min_base_amount": "2.00",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "LTC",
+    "market_id": 35,
+    "min_base_amount": "0.100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "MAGS",
+    "market_id": 155,
+    "min_base_amount": "0.100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "MEGA",
+    "market_id": 94,
+    "min_base_amount": "15.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "MET",
+    "market_id": 95,
+    "min_base_amount": "15.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "META",
+    "market_id": 117,
+    "min_base_amount": "0.0200",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "MKR",
+    "market_id": 28,
+    "min_base_amount": "0.0000",
+    "min_quote_amount": "0.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "MNT",
+    "market_id": 63,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "MON",
+    "market_id": 91,
+    "min_base_amount": "50.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "MORPHO",
+    "market_id": 68,
+    "min_base_amount": "3.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "MSFT",
+    "market_id": 115,
+    "min_base_amount": "0.0200",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "MSTR",
+    "market_id": 122,
+    "min_base_amount": "0.0350",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "MYX",
+    "market_id": 80,
+    "min_base_amount": "0.40",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "NEAR",
+    "market_id": 10,
+    "min_base_amount": "2.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "NMR",
+    "market_id": 74,
+    "min_base_amount": "0.50",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "NVDA",
+    "market_id": 110,
+    "min_base_amount": "0.050",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "NZDUSD",
+    "market_id": 107,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "ONDO",
+    "market_id": 38,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "OP",
+    "market_id": 55,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "PAXG",
+    "market_id": 48,
+    "min_base_amount": "0.0025",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "PENDLE",
+    "market_id": 37,
+    "min_base_amount": "3.00",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "PENGU",
+    "market_id": 47,
+    "min_base_amount": "200",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "PIPPIN",
+    "market_id": 135,
+    "min_base_amount": "30.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "PLTR",
+    "market_id": 111,
+    "min_base_amount": "0.050",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "POL",
+    "market_id": 14,
+    "min_base_amount": "40",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "POPCAT",
+    "market_id": 23,
+    "min_base_amount": "40.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "PROVE",
+    "market_id": 57,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "PUMP",
+    "market_id": 45,
+    "min_base_amount": "2000",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "PYTH",
+    "market_id": 78,
+    "min_base_amount": "40.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "QQQ",
+    "market_id": 129,
+    "min_base_amount": "0.0100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "RESOLV",
+    "market_id": 51,
+    "min_base_amount": "40",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "RIVER",
+    "market_id": 126,
+    "min_base_amount": "0.150",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "ROBO",
+    "market_id": 149,
+    "min_base_amount": "150",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "S",
+    "market_id": 40,
+    "min_base_amount": "20.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "SAMSUNG",
+    "market_id": 140,
+    "min_base_amount": "0.000040",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 6
+  },
+  {
+    "symbol": "SEI",
+    "market_id": 32,
+    "min_base_amount": "50.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "SKHYNIX",
+    "market_id": 143,
+    "min_base_amount": "0.000010",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 6
+  },
+  {
+    "symbol": "SKR",
+    "market_id": 130,
+    "min_base_amount": "200",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "SKY",
+    "market_id": 79,
+    "min_base_amount": "100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "SNDK",
+    "market_id": 139,
+    "min_base_amount": "0.0100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "SOL",
+    "market_id": 2,
+    "min_base_amount": "0.050",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "SPX",
+    "market_id": 42,
+    "min_base_amount": "5.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "SPY",
+    "market_id": 128,
+    "min_base_amount": "0.0100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "STABLE",
+    "market_id": 118,
+    "min_base_amount": "300",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "STBL",
+    "market_id": 85,
+    "min_base_amount": "15.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "STRK",
+    "market_id": 104,
+    "min_base_amount": "50.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "SUI",
+    "market_id": 16,
+    "min_base_amount": "3.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "SYRUP",
+    "market_id": 44,
+    "min_base_amount": "20.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "TAO",
+    "market_id": 13,
+    "min_base_amount": "0.050",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "TIA",
+    "market_id": 67,
+    "min_base_amount": "3.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "TON",
+    "market_id": 12,
+    "min_base_amount": "2.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "TRUMP",
+    "market_id": 15,
+    "min_base_amount": "0.20",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "TRX",
+    "market_id": 43,
+    "min_base_amount": "40.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "TSLA",
+    "market_id": 112,
+    "min_base_amount": "0.0200",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "UNI",
+    "market_id": 30,
+    "min_base_amount": "1.00",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "URA",
+    "market_id": 150,
+    "min_base_amount": "0.100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "USDCAD",
+    "market_id": 100,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "USDCHF",
+    "market_id": 99,
+    "min_base_amount": "8.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "USDJPY",
+    "market_id": 98,
+    "min_base_amount": "0.050",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "USDKRW",
+    "market_id": 105,
+    "min_base_amount": "0.0050",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "USELESS",
+    "market_id": 66,
+    "min_base_amount": "20.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "VIRTUAL",
+    "market_id": 41,
+    "min_base_amount": "5.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "VVV",
+    "market_id": 69,
+    "min_base_amount": "3.00",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "WIF",
+    "market_id": 5,
+    "min_base_amount": "5.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "WLD",
+    "market_id": 6,
+    "min_base_amount": "5.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "WLFI",
+    "market_id": 72,
+    "min_base_amount": "25.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "WTI",
+    "market_id": 145,
+    "min_base_amount": "0.100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "XAG",
+    "market_id": 93,
+    "min_base_amount": "0.15",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "XAU",
+    "market_id": 92,
+    "min_base_amount": "0.0030",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 4
+  },
+  {
+    "symbol": "XCU",
+    "market_id": 136,
+    "min_base_amount": "1.00",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 2
+  },
+  {
+    "symbol": "XLM",
+    "market_id": 119,
+    "min_base_amount": "30.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "XMR",
+    "market_id": 77,
+    "min_base_amount": "0.020",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "XPD",
+    "market_id": 146,
+    "min_base_amount": "0.00300",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 5
+  },
+  {
+    "symbol": "XPL",
+    "market_id": 71,
+    "min_base_amount": "10.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "XPT",
+    "market_id": 147,
+    "min_base_amount": "0.00300",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 5
+  },
+  {
+    "symbol": "XRP",
+    "market_id": 7,
+    "min_base_amount": "20",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "YZY",
+    "market_id": 70,
+    "min_base_amount": "6.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  },
+  {
+    "symbol": "ZEC",
+    "market_id": 90,
+    "min_base_amount": "0.100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 3
+  },
+  {
+    "symbol": "ZK",
+    "market_id": 56,
+    "min_base_amount": "100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "ZORA",
+    "market_id": 53,
+    "min_base_amount": "100",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 0
+  },
+  {
+    "symbol": "ZRO",
+    "market_id": 60,
+    "min_base_amount": "3.0",
+    "min_quote_amount": "10.000000",
+    "supported_size_decimals": 1
+  }
+]
