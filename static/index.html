@@ -911,6 +911,13 @@
       render();
     }
 
+    function setTaskToNextHour(index) {
+      const nextHour = new Date();
+      nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
+      tasks[index].scheduled_at = formatDateTimeLocal(nextHour);
+      render();
+    }
+
     function render() {
       const container = document.getElementById("tasks");
 
@@ -1037,6 +1044,7 @@
 
               <div class="task-actions">
                 <button class="btn-ghost btn-small" onclick="setTaskToNow(${index})">设为当前时间</button>
+                <button class="btn-ghost btn-small" onclick="setTaskToNextHour(${index})">设为下一个小时整点</button>
                 <button class="btn-primary btn-small" onclick="executeNow(${index})">立即执行</button>
               </div>
             </div>

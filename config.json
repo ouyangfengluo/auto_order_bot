@@ -1,17 +1,4 @@
 {
-  "tasks": [
-    {
-      "name": "",
-      "exchange": "bybit",
-      "symbol": "PIPPINUSDT",
-      "quantity": 1200.0,
-      "side": "short",
-      "order_type": "market",
-      "price": null,
-      "leverage": 10,
-      "scheduled_at": "2026-03-17T23:00:00",
-      "enabled": false
-    }
-  ],
+  "tasks": [],
   "enabled": true
 }
