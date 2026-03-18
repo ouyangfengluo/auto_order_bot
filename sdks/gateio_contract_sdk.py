@@ -77,6 +77,12 @@ class GateioContractSDK(BaseContractSDK):
             return f"{normalized_symbol[:-4]}_USDT"
         return f"{normalized_symbol}_USDT"
 
+    def _to_asset_symbol(self, contract: str) -> str:
+        normalized_contract = str(contract or "").strip().upper()
+        if normalized_contract.endswith("_USDT"):
+            return normalized_contract[:-5]
+        return normalized_contract.replace("_", "")
+
     def _get_contract_info(self, contract: str) -> Dict[str, Any]:
         response = requests.get(f"{self.base_url}/futures/usdt/contracts/{contract}", timeout=10)
         response.raise_for_status()
@@ -234,4 +240,36 @@ class GateioContractSDK(BaseContractSDK):
             return sorted(set(symbols))
         except Exception as exc:
             self.logger.error("Gate.io contract list load failed: %s", exc)
+            raise
+
+    def list_contract_market_snapshots(self) -> list[Dict[str, Any]]:
+        try:
+            response = requests.get(f"{self.base_url}/futures/usdt/contracts", timeout=15)
+            response.raise_for_status()
+            data = response.json()
+
+            snapshots = []
+            for item in data:
+                contract_code = item.get("name")
+                if (
+                    not contract_code
+                    or item.get("in_delisting") is not False
+                    or item.get("status") != "trading"
+                ):
+                    continue
+
+                snapshots.append(
+                    self._build_market_snapshot(
+                        symbol=self._to_asset_symbol(contract_code),
+                        contract_code=contract_code,
+                        price=item.get("mark_price") or item.get("last_price"),
+                        funding_rate=item.get("funding_rate"),
+                        funding_interval=item.get("funding_interval"),
+                        funding_interval_unit="seconds",
+                    )
+                )
+
+            return sorted(snapshots, key=lambda row: row["contract_code"])
+        except Exception as exc:
+            self.logger.error("Gate.io market snapshot load failed: %s", exc)
             raise

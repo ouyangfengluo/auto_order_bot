@@ -50,6 +50,11 @@ class BaseContractSDK(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def list_contract_market_snapshots(self) -> list[Dict[str, Any]]:
+        """Return contract snapshots including price, funding rate, and funding interval."""
+        raise NotImplementedError
+
+    @abstractmethod
     def resolve_order_quantity(
         self,
         symbol: str,
@@ -74,6 +79,56 @@ class BaseContractSDK(ABC):
         if quantity < min_qty:
             return min_qty
         return quantity
+
+    def _safe_float(self, value: Any) -> Optional[float]:
+        try:
+            if value in (None, ""):
+                return None
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _normalize_funding_rate_pct(self, value: Any) -> Optional[float]:
+        rate = self._safe_float(value)
+        if rate is None:
+            return None
+        return round(rate * 100, 8)
+
+    def _normalize_interval_hours(self, value: Any, unit: str = "hours") -> Optional[float | int]:
+        interval = self._safe_float(value)
+        if interval is None:
+            return None
+
+        if unit == "seconds":
+            interval /= 3600
+        elif unit == "minutes":
+            interval /= 60
+        elif unit == "milliseconds":
+            interval /= 3600000
+
+        rounded_interval = round(interval, 6)
+        if float(rounded_interval).is_integer():
+            return int(rounded_interval)
+        return rounded_interval
+
+    def _build_market_snapshot(
+        self,
+        *,
+        symbol: str,
+        contract_code: str,
+        price: Any,
+        funding_rate: Any,
+        funding_interval: Any,
+        funding_interval_unit: str = "hours",
+    ) -> Dict[str, Any]:
+        snapshot = {
+            "symbol": symbol,
+            "contract_code": contract_code,
+            "price": self._safe_float(price),
+            "funding_rate": self._normalize_funding_rate_pct(funding_rate),
+            "funding_interval": self._normalize_interval_hours(funding_interval, unit=funding_interval_unit),
+        }
+        return snapshot
 
     def _floor_to_step(self, value: float, step: float) -> float:
         step_decimal = Decimal(str(step))

@@ -76,6 +76,46 @@ class GateioContractSDKTests(unittest.TestCase):
         self.assertEqual({"success": False, "message": "boom"}, result)
         mock_post.assert_not_called()
 
+    def test_list_contract_market_snapshots_normalizes_price_rate_and_interval(self):
+        response = Mock()
+        response.raise_for_status.return_value = None
+        response.json.return_value = [
+            {
+                "name": "DOGE_USDT",
+                "status": "trading",
+                "in_delisting": False,
+                "mark_price": "0.1725",
+                "last_price": "0.1724",
+                "funding_rate": "0.00093",
+                "funding_interval": 7200,
+            },
+            {
+                "name": "OLD_USDT",
+                "status": "settling",
+                "in_delisting": False,
+                "mark_price": "1",
+                "funding_rate": "0.001",
+                "funding_interval": 28800,
+            },
+        ]
+
+        with patch("sdks.gateio_contract_sdk.requests.get", return_value=response) as mock_get:
+            snapshots = self.sdk.list_contract_market_snapshots()
+
+        self.assertEqual(
+            [
+                {
+                    "symbol": "DOGE",
+                    "contract_code": "DOGE_USDT",
+                    "price": 0.1725,
+                    "funding_rate": 0.093,
+                    "funding_interval": 2,
+                }
+            ],
+            snapshots,
+        )
+        mock_get.assert_called_once_with("https://api.gateio.ws/api/v4/futures/usdt/contracts", timeout=15)
+
 
 if __name__ == "__main__":
     unittest.main()

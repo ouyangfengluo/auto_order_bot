@@ -46,6 +46,10 @@ class BybitContractSDK(BaseContractSDK):
             normalized_symbol = f"{normalized_symbol}USDT"
         return normalized_symbol
 
+    def _to_asset_symbol(self, symbol: str) -> str:
+        normalized_symbol = self._to_symbol(symbol)
+        return normalized_symbol[:-4] if normalized_symbol.endswith("USDT") else normalized_symbol
+
     def _get_instrument_info(self, symbol: str) -> Dict[str, Any]:
         response = requests.get(
             f"{self.base_url}/v5/market/instruments-info",
@@ -233,4 +237,60 @@ class BybitContractSDK(BaseContractSDK):
             return sorted(set(symbols))
         except Exception as exc:
             self.logger.error("Bybit contract list load failed: %s", exc)
+            raise
+
+    def list_contract_market_snapshots(self) -> list[Dict[str, Any]]:
+        try:
+            instruments_response = requests.get(
+                f"{self.base_url}/v5/market/instruments-info",
+                params={"category": "linear", "limit": 1000},
+                timeout=15,
+            )
+            instruments_response.raise_for_status()
+            instruments_payload = instruments_response.json()
+            if instruments_payload.get("retCode") != 0:
+                raise RuntimeError(instruments_payload.get("retMsg", str(instruments_payload)))
+
+            tickers_response = requests.get(
+                f"{self.base_url}/v5/market/tickers",
+                params={"category": "linear"},
+                timeout=15,
+            )
+            tickers_response.raise_for_status()
+            tickers_payload = tickers_response.json()
+            if tickers_payload.get("retCode") != 0:
+                raise RuntimeError(tickers_payload.get("retMsg", str(tickers_payload)))
+
+            ticker_map = {
+                item.get("symbol"): item
+                for item in tickers_payload.get("result", {}).get("list", [])
+                if item.get("symbol")
+            }
+
+            snapshots = []
+            for instrument in instruments_payload.get("result", {}).get("list", []):
+                contract_code = instrument.get("symbol")
+                if (
+                    not contract_code
+                    or instrument.get("contractType") != "LinearPerpetual"
+                    or instrument.get("settleCoin") != "USDT"
+                    or instrument.get("status") != "Trading"
+                ):
+                    continue
+
+                ticker = ticker_map.get(contract_code, {})
+                snapshots.append(
+                    self._build_market_snapshot(
+                        symbol=self._to_asset_symbol(contract_code),
+                        contract_code=contract_code,
+                        price=ticker.get("markPrice") or ticker.get("lastPrice"),
+                        funding_rate=ticker.get("fundingRate"),
+                        funding_interval=instrument.get("fundingInterval") or ticker.get("fundingIntervalHour"),
+                        funding_interval_unit="minutes" if instrument.get("fundingInterval") else "hours",
+                    )
+                )
+
+            return sorted(snapshots, key=lambda row: row["contract_code"])
+        except Exception as exc:
+            self.logger.error("Bybit market snapshot load failed: %s", exc)
             raise

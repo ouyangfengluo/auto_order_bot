@@ -28,6 +28,8 @@ def _patch_lighter_windows_runtime():
 class LighterContractSDK(BaseContractSDK):
     """Lighter perpetual SDK wrapped into the sync project interface."""
 
+    LIGHTER_FUNDING_INTERVAL_HOURS = 1
+
     def __init__(self):
         self.market_meta_path = Path(__file__).resolve().parent.parent / "lighter_market_id.json"
         super().__init__()
@@ -134,6 +136,23 @@ class LighterContractSDK(BaseContractSDK):
         if meta:
             return meta
         return self._run_async(self._load_market_meta_from_api())
+
+    async def _load_funding_rates_async(self) -> list[dict]:
+        lighter, Configuration, _ = self._load_lighter_modules()
+        client = lighter.ApiClient(configuration=Configuration(host=self.base_url))
+        funding_api = lighter.FundingApi(client)
+
+        try:
+            payload = await funding_api.funding_rates()
+            data = payload.to_dict()
+            funding_rates = data.get("funding_rates", []) or []
+            return [
+                item
+                for item in funding_rates
+                if item.get("exchange") == "lighter" and item.get("symbol")
+            ]
+        finally:
+            await client.close()
 
     def _get_market_meta(self, symbol: str | None) -> dict:
         normalized_symbol = self._normalize_symbol_key(symbol)
@@ -627,3 +646,43 @@ class LighterContractSDK(BaseContractSDK):
             if item.get("symbol")
         ]
         return sorted(set(symbols))
+
+    def list_contract_market_snapshots(self) -> list[Dict[str, Any]]:
+        try:
+            try:
+                market_meta = self._run_async(self._load_market_meta_from_api())
+            except Exception:
+                self.logger.warning("Falling back to cached lighter market metadata for snapshots.")
+                market_meta = self._load_market_meta()
+
+            funding_rates = self._run_async(self._load_funding_rates_async())
+            funding_rate_map = {
+                str(item.get("symbol")).upper(): item.get("rate")
+                for item in funding_rates
+                if item.get("symbol")
+            }
+
+            snapshots = []
+            for item in market_meta:
+                contract_code = str(item.get("symbol") or "").strip().upper()
+                if (
+                    not contract_code
+                    or item.get("market_type") not in {None, "", "perp"}
+                    or item.get("status") not in {None, "", "active", "open"}
+                ):
+                    continue
+
+                snapshots.append(
+                    self._build_market_snapshot(
+                        symbol=contract_code,
+                        contract_code=contract_code,
+                        price=item.get("last_trade_price"),
+                        funding_rate=funding_rate_map.get(contract_code),
+                        funding_interval=self.LIGHTER_FUNDING_INTERVAL_HOURS,
+                    )
+                )
+
+            return sorted(snapshots, key=lambda row: row["contract_code"])
+        except Exception as exc:
+            self.logger.error("Lighter market snapshot load failed: %s", exc)
+            raise

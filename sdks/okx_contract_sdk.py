@@ -122,6 +122,10 @@ class OkxContractSDK(BaseContractSDK):
 
         return f"{compact_symbol}-USDT-SWAP"
 
+    def _to_asset_symbol(self, inst_id: str) -> str:
+        normalized_inst_id = self._to_instrument_id(inst_id)
+        return normalized_inst_id.split("-")[0]
+
     def _get_instrument_info(self, inst_id: str) -> Dict[str, Any]:
         payload = self._request(
             "GET",
@@ -152,6 +156,32 @@ class OkxContractSDK(BaseContractSDK):
         if not reference_price:
             raise RuntimeError(f"OKX mark price missing for {inst_id}")
         return float(reference_price)
+
+    def _get_funding_snapshot(self, inst_id: str) -> Dict[str, Any]:
+        payload = self._request(
+            "GET",
+            "/api/v5/public/funding-rate",
+            params={"instId": inst_id},
+        )
+        self._require_ok(payload, default_message=f"Failed to load OKX funding rate for {inst_id}")
+        data = payload.get("data", [])
+        if not data:
+            raise RuntimeError(f"OKX funding rate not found for {inst_id}")
+        return data[0]
+
+    def _get_funding_snapshot_with_session(self, session: requests.Session, inst_id: str) -> Dict[str, Any]:
+        response = session.get(
+            f"{self.base_url}/api/v5/public/funding-rate",
+            params={"instId": inst_id},
+            timeout=10,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        self._require_ok(payload, default_message=f"Failed to load OKX funding rate for {inst_id}")
+        data = payload.get("data", [])
+        if not data:
+            raise RuntimeError(f"OKX funding rate not found for {inst_id}")
+        return data[0]
 
     def _request_position_mode(self) -> str:
         payload = self._request("GET", "/api/v5/account/config", auth=True)
@@ -364,4 +394,76 @@ class OkxContractSDK(BaseContractSDK):
             return sorted(set(symbols))
         except Exception as exc:
             self.logger.error("OKX contract list load failed: %s", exc)
+            raise
+
+    def list_contract_market_snapshots(self) -> list[Dict[str, Any]]:
+        try:
+            with requests.Session() as session:
+                instruments_response = session.get(
+                    f"{self.base_url}/api/v5/public/instruments",
+                    params={"instType": "SWAP"},
+                    timeout=15,
+                )
+                instruments_response.raise_for_status()
+                instruments_payload = instruments_response.json()
+                self._require_ok(instruments_payload, default_message="Failed to load OKX contract metadata")
+
+                mark_price_response = session.get(
+                    f"{self.base_url}/api/v5/public/mark-price",
+                    params={"instType": "SWAP"},
+                    timeout=15,
+                )
+                mark_price_response.raise_for_status()
+                mark_price_payload = mark_price_response.json()
+                self._require_ok(mark_price_payload, default_message="Failed to load OKX mark prices")
+                mark_price_map = {
+                    item.get("instId"): item.get("markPx")
+                    for item in mark_price_payload.get("data", [])
+                    if item.get("instId")
+                }
+
+                snapshots = []
+                for instrument in instruments_payload.get("data", []):
+                    contract_code = instrument.get("instId")
+                    if (
+                        not contract_code
+                        or instrument.get("state") != "live"
+                        or instrument.get("settleCcy") != "USDT"
+                        or instrument.get("ctType") != "linear"
+                    ):
+                        continue
+
+                    funding_snapshot: Dict[str, Any] = {}
+                    for _ in range(3):
+                        try:
+                            funding_snapshot = self._get_funding_snapshot_with_session(session, contract_code)
+                            break
+                        except Exception as exc:
+                            self.logger.warning("Retrying OKX funding rate for %s: %s", contract_code, exc)
+                            time.sleep(0.2)
+
+                    funding_time = self._safe_float(funding_snapshot.get("fundingTime"))
+                    prev_funding_time = self._safe_float(funding_snapshot.get("prevFundingTime"))
+                    next_funding_time = self._safe_float(funding_snapshot.get("nextFundingTime"))
+
+                    funding_interval_ms = None
+                    if funding_time and prev_funding_time and funding_time > prev_funding_time:
+                        funding_interval_ms = funding_time - prev_funding_time
+                    elif next_funding_time and funding_time and next_funding_time > funding_time:
+                        funding_interval_ms = next_funding_time - funding_time
+
+                    snapshots.append(
+                        self._build_market_snapshot(
+                            symbol=self._to_asset_symbol(contract_code),
+                            contract_code=contract_code,
+                            price=mark_price_map.get(contract_code),
+                            funding_rate=funding_snapshot.get("fundingRate"),
+                            funding_interval=funding_interval_ms,
+                            funding_interval_unit="milliseconds",
+                        )
+                    )
+
+            return sorted(snapshots, key=lambda row: row["contract_code"])
+        except Exception as exc:
+            self.logger.error("OKX market snapshot load failed: %s", exc)
             raise
