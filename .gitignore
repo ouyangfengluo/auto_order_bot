@@ -3,6 +3,7 @@ node_modules/
 __pycache__/
 python/sdks/__pycache__/
 python/__pycache__/
+sdks/__pycache__/
 .env
 .DS_Store
 *.log

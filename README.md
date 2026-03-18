@@ -19,7 +19,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-浏览器访问 `http://localhost:8000` 进入配置页面。
+浏览器访问 `http://localhost:1888` 进入配置页面。
 
 ## 环境变量
 
