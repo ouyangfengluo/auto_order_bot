@@ -158,11 +158,25 @@ def normalize_task(task: dict) -> dict:
 
 
 def load_config() -> dict:
+    raw_config = {}
     if CONFIG_PATH.exists():
-        with open(CONFIG_PATH, "r", encoding="utf-8") as file:
-            raw_config = json.load(file)
-    else:
-        raw_config = {}
+        content = CONFIG_PATH.read_text(encoding="utf-8")
+        if content.strip():
+            try:
+                parsed_config = json.loads(content)
+            except json.JSONDecodeError as exc:
+                logger.warning("Config file %s is invalid JSON, using default empty config instead: %s", CONFIG_PATH, exc)
+            else:
+                if isinstance(parsed_config, dict):
+                    raw_config = parsed_config
+                else:
+                    logger.warning(
+                        "Config file %s must contain a JSON object, got %s. Using default empty config instead.",
+                        CONFIG_PATH,
+                        type(parsed_config).__name__,
+                    )
+        else:
+            logger.info("Config file %s is empty, using default empty config.", CONFIG_PATH)
 
     return {
         "tasks": [normalize_task(task) for task in raw_config.get("tasks", [])],
@@ -262,24 +276,20 @@ def get_order_status_payload(exchange: str, order_id: str, symbol: str | None = 
 
 def run_scheduled_order(task: dict):
     try:
-        exchange = normalize_exchange(task.get("exchange", "binance"), strict=True)
-        symbol = normalize_symbol(task.get("symbol"), exchange)
-        quantity = float(task.get("quantity", 0.001))
-        quantity_mode = normalize_quantity_mode(task.get("quantity_mode"), default="contract")
+        resolved_quantity_payload = resolve_order_quantity_for_task(task)
+        exchange = resolved_quantity_payload["exchange"]
+        symbol = resolved_quantity_payload["symbol"]
+        quantity = float(resolved_quantity_payload["input_quantity"])
+        quantity_mode = resolved_quantity_payload["quantity_mode"]
         side = task.get("side", "long")
         order_type = task.get("order_type", "market")
-        price = task.get("price")
-        leverage = task.get("leverage")
+        raw_price = task.get("price")
+        price = float(raw_price) if raw_price not in (None, "") else None
+        raw_leverage = task.get("leverage")
+        leverage = int(raw_leverage) if raw_leverage not in (None, "") else None
 
         sdk = ContractSDKFactory.get_sdk(exchange)
-        resolved_quantity_payload = sdk.resolve_order_quantity(
-            symbol=symbol,
-            quantity=quantity,
-            quantity_mode=quantity_mode,
-            leverage=int(leverage) if leverage else None,
-            price=float(price) if price else None,
-        )
-        order_quantity = float(resolved_quantity_payload["quantity"])
+        order_quantity = float(resolved_quantity_payload["resolved_quantity"])
         logger.info(
             "Resolved order quantity: exchange=%s symbol=%s mode=%s input=%s resolved=%s ref_price=%s leverage=%s",
             exchange,
@@ -287,16 +297,16 @@ def run_scheduled_order(task: dict):
             quantity_mode,
             quantity,
             order_quantity,
-            resolved_quantity_payload.get("reference_price"),
+            resolved_quantity_payload["reference_price"],
             resolved_quantity_payload.get("leverage_used", leverage),
         )
         result = sdk.place_order(
             symbol=symbol,
             side=side,
             quantity=order_quantity,
-            price=float(price) if price else None,
+            price=price,
             order_type=order_type,
-            leverage=int(leverage) if leverage else None,
+            leverage=leverage,
         )
         logger.info("Scheduled task executed: %s -> %s", task, result)
         return result
@@ -387,9 +397,60 @@ class TaskItem(BaseModel):
     enabled: bool = True
 
 
+class QuantityResolveRequest(BaseModel):
+    exchange: str = "binance"
+    symbol: str = "BTCUSDT"
+    quantity_mode: str | None = None
+    quantity: float = 10.0
+    leverage: int | None = None
+    price: float | None = None
+
+
 class ConfigUpdate(BaseModel):
     tasks: list[TaskItem] = Field(default_factory=list)
     enabled: bool = True
+
+
+def resolve_order_quantity_for_task(task: dict, default_quantity_mode: str = "contract") -> dict:
+    exchange = normalize_exchange(task.get("exchange", "binance"), strict=True)
+    quantity_mode = normalize_quantity_mode(task.get("quantity_mode"), default=default_quantity_mode)
+    symbol = normalize_symbol(task.get("symbol"), exchange)
+    quantity = float(task.get("quantity", default_quantity_for_exchange(exchange, quantity_mode)))
+
+    raw_leverage = task.get("leverage")
+    leverage = int(raw_leverage) if raw_leverage not in (None, "") else None
+
+    raw_price = task.get("price")
+    price = float(raw_price) if raw_price not in (None, "") else None
+
+    sdk = ContractSDKFactory.get_sdk(exchange)
+    resolved_payload = sdk.resolve_order_quantity(
+        symbol=symbol,
+        quantity=quantity,
+        quantity_mode=quantity_mode,
+        leverage=leverage,
+        price=price,
+    )
+
+    resolved_quantity = float(resolved_payload["quantity"])
+    display_quantity = float(resolved_payload.get("human_quantity", resolved_quantity))
+
+    return {
+        "exchange": exchange,
+        "symbol": symbol,
+        "quantity_mode": quantity_mode,
+        "input_mode": resolved_payload.get("input_mode", quantity_mode),
+        "input_quantity": quantity,
+        "resolved_quantity": resolved_quantity,
+        "display_quantity": display_quantity,
+        "reference_price": resolved_payload.get("reference_price"),
+        "leverage_used": resolved_payload.get("leverage_used", leverage),
+        "raw_quantity": resolved_payload.get("raw_quantity"),
+        "notional": resolved_payload.get("notional"),
+        "contract_multiplier": resolved_payload.get("contract_multiplier"),
+        "human_quantity": resolved_payload.get("human_quantity"),
+        "market_id": resolved_payload.get("market_id"),
+    }
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -418,6 +479,20 @@ async def update_config(body: ConfigUpdate):
 @app.post("/api/execute")
 async def execute_now(task: TaskItem):
     return run_scheduled_order(normalize_task(task.model_dump(exclude_none=True)))
+
+
+@app.post("/api/resolve-quantity")
+async def resolve_quantity(body: QuantityResolveRequest):
+    try:
+        return resolve_order_quantity_for_task(body.model_dump(exclude_none=True), default_quantity_mode="margin")
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except NotImplementedError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        exchange = normalize_exchange(body.exchange, strict=False)
+        logger.exception("Failed to resolve order quantity for %s", exchange)
+        raise HTTPException(status_code=502, detail=f"Failed to resolve {exchange} quantity: {exc}") from exc
 
 
 @app.get("/api/exchanges")

@@ -341,6 +341,17 @@
 
     .tip { display: block; margin-top: 7px; font-size: 0.82rem; }
 
+    .input-with-action {
+      display: flex;
+      align-items: stretch;
+      gap: 10px;
+    }
+
+    .input-with-action input {
+      flex: 1;
+      min-width: 0;
+    }
+
     .task-actions,
     .actions {
       display: flex;
@@ -359,6 +370,13 @@
     }
 
     button:hover { transform: translateY(-1px); }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
+      transform: none;
+      box-shadow: none;
+    }
 
     .btn-primary {
       background: linear-gradient(135deg, var(--brand), #0ea5a0);
@@ -483,6 +501,21 @@
       return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
     }
 
+    function formatNumberForMessage(value) {
+      if (value === null || value === undefined || value === "") {
+        return "";
+      }
+
+      const numericValue = Number(value);
+      if (Number.isNaN(numericValue)) {
+        return String(value);
+      }
+
+      return numericValue.toLocaleString("zh-CN", {
+        maximumFractionDigits: 12
+      });
+    }
+
     function getCurrentDateTimeLocal() {
       const now = new Date();
       now.setMilliseconds(0);
@@ -559,7 +592,8 @@
 
     function ensureTaskUiState() {
       taskUiState = tasks.map((_, index) => ({
-        expanded: taskUiState[index] && taskUiState[index].expanded === true
+        expanded: taskUiState[index] && taskUiState[index].expanded === true,
+        convertingQuantity: taskUiState[index] && taskUiState[index].convertingQuantity === true
       }));
     }
 
@@ -887,6 +921,19 @@
       render();
     }
 
+    function duplicateTask(index) {
+      const task = tasks[index];
+      if (!task) {
+        return;
+      }
+
+      const clonedTask = normalizeTask({ ...task });
+      tasks.splice(index + 1, 0, clonedTask);
+      taskUiState.splice(index + 1, 0, { expanded: true, convertingQuantity: false });
+      symbolUiState = {};
+      render();
+    }
+
     function setTaskExchange(index, nextExchange) {
       const task = tasks[index];
       if (!task) {
@@ -1002,6 +1049,51 @@
       tasks[index].leverage = normalizeLeverageValue(value);
     }
 
+    async function convertTaskQuantity(index) {
+      const task = tasks[index];
+      if (!task || task.quantity_mode !== "margin") {
+        return;
+      }
+
+      ensureTaskUiState();
+      taskUiState[index].convertingQuantity = true;
+      render();
+
+      let successMessage = "";
+
+      try {
+        const response = await fetch(`${API}/api/resolve-quantity`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            exchange: task.exchange,
+            symbol: task.symbol,
+            quantity_mode: "margin",
+            quantity: Number(task.quantity),
+            leverage: normalizeLeverageValue(task.leverage),
+            price: null
+          })
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.detail || payload.message || "数量转换失败");
+        }
+
+        task.quantity_mode = "contract";
+        task.quantity = Number(payload.display_quantity);
+        successMessage = `已按最新价格 ${formatNumberForMessage(payload.reference_price)} 将 ${formatNumberForMessage(payload.input_quantity)} USDT 转换为 ${formatNumberForMessage(payload.display_quantity)} 合约数量${payload.leverage_used ? `（${payload.leverage_used}x 杠杆）` : ""}。`;
+      } catch (error) {
+        alert(`转换失败: ${error.message}`);
+      } finally {
+        taskUiState[index].convertingQuantity = false;
+        render();
+      }
+
+      if (successMessage) {
+        alert(successMessage);
+      }
+    }
+
     function retryLoadContracts(index) {
       const task = tasks[index];
       if (!task) {
@@ -1020,6 +1112,13 @@
 
     function setTaskToNow(index) {
       tasks[index].scheduled_at = getCurrentDateTimeLocal();
+      render();
+    }
+
+    function setTaskToCurrentHourEnd(index) {
+      const currentHourEnd = new Date();
+      currentHourEnd.setMinutes(59, 59, 0);
+      tasks[index].scheduled_at = formatDateTimeLocal(currentHourEnd);
       render();
     }
 
@@ -1043,6 +1142,7 @@
       container.innerHTML = tasks.map((task, index) => {
         const meta = getExchangeMeta(task.exchange);
         const expanded = isTaskExpanded(index);
+        const isConvertingQuantity = Boolean(taskUiState[index] && taskUiState[index].convertingQuantity);
         return `
           <article class="task-card ${expanded ? "is-expanded" : ""}">
             <div class="task-summary">
@@ -1064,6 +1164,7 @@
                 <button type="button" class="btn-ghost btn-small" onclick="toggleTaskExpanded(${index})" aria-expanded="${expanded}">
                   ${expanded ? "收起" : "展开编辑"}
                 </button>
+                <button type="button" class="btn-ghost btn-small" onclick="duplicateTask(${index})">复制一份</button>
                 <button type="button" class="btn-danger btn-small" onclick="removeTask(${index})">删除</button>
               </div>
             </div>
@@ -1095,14 +1196,21 @@
                 </div>
 
                 <div>
-                  <div class="label-row"><label>${getQuantityLabel(task.quantity_mode)}</label></div>
-                  <input
-                    type="number"
-                    step="0.001"
-                    value="${task.quantity}"
-                    placeholder="${getQuantityPlaceholder(task.quantity_mode)}"
-                    onchange="tasks[${index}].quantity=Number(this.value)"
-                  />
+                  <div class="label-row">
+                    <label>${getQuantityLabel(task.quantity_mode)}</label>
+                    ${task.quantity_mode === "margin"
+                      ? `<button type="button" class="btn-ghost btn-small" onclick="convertTaskQuantity(${index})" ${isConvertingQuantity ? "disabled" : ""}>${isConvertingQuantity ? "转换中..." : "转换为合约数量"}</button>`
+                      : ""}
+                  </div>
+                  <div class="input-with-action">
+                    <input
+                      type="number"
+                      step="0.001"
+                      value="${task.quantity}"
+                      placeholder="${getQuantityPlaceholder(task.quantity_mode)}"
+                      onchange="tasks[${index}].quantity=Number(this.value)"
+                    />
+                  </div>
                   <span class="tip">${escapeHtml(getQuantityHint(task))}</span>
                 </div>
 
@@ -1174,6 +1282,7 @@
 
               <div class="task-actions">
                 <button class="btn-ghost btn-small" onclick="setTaskToNow(${index})">设为当前时间</button>
+                <button class="btn-ghost btn-small" onclick="setTaskToCurrentHourEnd(${index})">设为当前小时最后时刻</button>
                 <button class="btn-ghost btn-small" onclick="setTaskToNextHour(${index})">设为下一个小时整点</button>
                 <button class="btn-primary btn-small" onclick="executeNow(${index})">立即执行</button>
               </div>
