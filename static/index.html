@@ -113,6 +113,14 @@
       font-size: 1.04rem;
     }
 
+    .panel-head-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
     .task-title-row {
       display: flex;
       align-items: center;
@@ -418,6 +426,8 @@
       .hero, .panel, .task-summary, .task-body { padding: 18px; }
       .actions, .task-summary-actions, .toolbar button { width: 100%; }
       .actions button, .task-summary-actions button { flex: 1 1 100%; }
+      .panel-head-actions { width: 100%; }
+      .panel-head-actions button { flex: 1 1 calc(50% - 10px); }
     }
   </style>
 </head>
@@ -433,30 +443,16 @@
       <div class="panel-head">
         <div>
           <h2 class="panel-title">任务列表</h2>
+          <p class="panel-note">建议先选择交易所，再点击币对输入框加载合约列表。保存后会立即同步新的调度计划。</p>
         </div>
-        <span class="pill">Symbol Search Ready</span>
-      </div>
-      <div id="tasks" class="task-list"></div>
-    </section>
-
-    <section class="panel">
-      <div class="toolbar">
-        <div>
-          <h2 class="panel-title">新增任务</h2>
-          <p class="panel-note">建议先选择交易所，再点击币对输入框加载合约列表。</p>
-        </div>
-        <button class="btn-primary" onclick="addTask()">+ 添加任务</button>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="footer">
-        <div class="footer-note">保存后会立即同步新的调度计划。币对输入支持大小写自动统一，并优先展示最相关的匹配项。</div>
-        <div class="actions">
+        <div class="panel-head-actions">
+          <button class="btn-primary" onclick="addTask()">+ 添加任务</button>
           <button class="btn-primary" onclick="saveConfig()">保存配置</button>
           <button class="btn-secondary" onclick="loadConfig()">刷新</button>
+          <span class="pill">Symbol Search Ready</span>
         </div>
       </div>
+      <div id="tasks" class="task-list"></div>
     </section>
 
     <section class="panel">
