@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auto Order Rust</title>
+  <style>
+    body { font-family: "Segoe UI", "PingFang SC", sans-serif; margin: 0; padding: 20px; background:#f7f8fa; color:#1f2937; }
+    .wrap { max-width: 980px; margin: 0 auto; }
+    .card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px; margin-bottom:14px; }
+    h1 { margin: 0 0 8px; }
+    .row { display:flex; gap:10px; flex-wrap: wrap; }
+    input, select, button { padding:8px 10px; border-radius:8px; border:1px solid #d1d5db; }
+    button { cursor:pointer; background:#111827; color:#fff; border:none; }
+    .muted { color:#6b7280; font-size: 14px; }
+    pre { background:#111827; color:#f9fafb; padding:12px; border-radius:8px; overflow:auto; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Auto Order Rust</h1>
+      <div class="muted">Rust 版本仅保留 Binance / Gate.io / Bybit / OKX，已移除 Lighter。</div>
+    </div>
+
+    <div class="card">
+      <div class="row">
+        <select id="exchange">
+          <option value="binance">Binance</option>
+          <option value="gateio">Gate.io</option>
+          <option value="bybit">Bybit</option>
+          <option value="okx">OKX</option>
+        </select>
+        <input id="symbol" value="BTCUSDT" />
+        <input id="quantity" type="number" value="10" />
+        <select id="qtyMode">
+          <option value="margin">保证金</option>
+          <option value="contract">合约数量</option>
+        </select>
+        <button onclick="resolveQty()">换算数量</button>
+      </div>
+      <pre id="result">Ready</pre>
+    </div>
+  </div>
+  <script>
+    async function resolveQty() {
+      const payload = {
+        exchange: document.getElementById('exchange').value,
+        symbol: document.getElementById('symbol').value,
+        quantity_mode: document.getElementById('qtyMode').value,
+        quantity: Number(document.getElementById('quantity').value),
+        leverage: 10
+      };
+      const res = await fetch('/api/resolve-quantity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
