@@ -134,6 +134,22 @@ impl GateioClient {
 
         format!("HTTP {}", status.as_u16())
     }
+
+    fn extract_order_id(payload: &Value) -> Option<String> {
+        if let Some(id) = payload["id"].as_str() {
+            let trimmed = id.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_string());
+            }
+        }
+        if let Some(id) = payload["id"].as_i64() {
+            return Some(id.to_string());
+        }
+        if let Some(id) = payload["id"].as_u64() {
+            return Some(id.to_string());
+        }
+        None
+    }
 }
 
 #[async_trait]
@@ -267,11 +283,17 @@ impl ExchangeClient for GateioClient {
         let data: Option<Value> = serde_json::from_str(&raw_text).ok();
         if let Some(order_id) = data
             .as_ref()
-            .and_then(|payload| payload["id"].as_str())
+            .and_then(Self::extract_order_id)
         {
             Ok(OrderResult {
                 success: true,
                 order_id: Some(order_id.to_string()),
+                message: "Order placed successfully".to_string(),
+            })
+        } else if status.is_success() && raw_text.contains("\"id\"") {
+            Ok(OrderResult {
+                success: true,
+                order_id: None,
                 message: "Order placed successfully".to_string(),
             })
         } else {
