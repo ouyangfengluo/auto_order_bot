@@ -58,6 +58,19 @@ impl GateioClient {
         }
     }
 
+    fn parse_number(value: &Value) -> Option<f64> {
+        if let Some(v) = value.as_f64() {
+            return Some(v);
+        }
+        if let Some(v) = value.as_i64() {
+            return Some(v as f64);
+        }
+        if let Some(v) = value.as_u64() {
+            return Some(v as f64);
+        }
+        value.as_str()?.parse::<f64>().ok()
+    }
+
     fn signed_headers(
         &self,
         method: &str,
@@ -128,14 +141,14 @@ impl ExchangeClient for GateioClient {
     ) -> anyhow::Result<ResolvedQuantity> {
         let contract = self.to_contract_symbol(symbol);
         let info = self.contract_info(&contract).await?;
-        let min_qty = info["order_size_min"].as_f64().unwrap_or(1.0);
+        let min_qty = Self::parse_number(&info["order_size_min"]).unwrap_or(1.0);
         let step = 1.0;
-        let contract_multiplier = info["quanto_multiplier"].as_f64().unwrap_or(1.0);
+        let contract_multiplier = Self::parse_number(&info["quanto_multiplier"]).unwrap_or(1.0);
         if quantity_mode == "margin" {
             let reference_price = price
                 .filter(|v| *v > 0.0)
-                .or_else(|| info["mark_price"].as_str().and_then(|v| v.parse::<f64>().ok()))
-                .or_else(|| info["last_price"].as_str().and_then(|v| v.parse::<f64>().ok()))
+                .or_else(|| Self::parse_number(&info["mark_price"]))
+                .or_else(|| Self::parse_number(&info["last_price"]))
                 .ok_or_else(|| anyhow::anyhow!("Gate.io mark price not found for {}", contract))?;
             return resolve_margin_quantity(
                 quantity,
