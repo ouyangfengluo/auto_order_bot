@@ -90,6 +90,49 @@ impl BinanceClient {
     fn auth_ok(&self) -> bool {
         !self.api_key.is_empty() && !self.api_secret.is_empty()
     }
+
+    async fn submit_order(&self, params: BTreeMap<String, String>) -> anyhow::Result<Value> {
+        let query = self.signed_query(params)?;
+        let payload = self
+            .client
+            .post(format!("{}/fapi/v1/order?{}", self.base_url, query))
+            .header("X-MBX-APIKEY", &self.api_key)
+            .send()
+            .await?
+            .json::<Value>()
+            .await?;
+        Ok(payload)
+    }
+
+    fn extract_order_id(payload: &Value) -> Option<String> {
+        if let Some(id) = payload["orderId"].as_i64() {
+            return Some(id.to_string());
+        }
+        if let Some(id) = payload["orderId"].as_u64() {
+            return Some(id.to_string());
+        }
+        if let Some(id) = payload["orderId"].as_str() {
+            let trimmed = id.trim();
+            if !trimmed.is_empty() {
+                return Some(trimmed.to_string());
+            }
+        }
+        None
+    }
+
+    fn extract_error_message(payload: &Value) -> String {
+        payload["msg"]
+            .as_str()
+            .or_else(|| payload["message"].as_str())
+            .unwrap_or("Binance order failed")
+            .to_string()
+    }
+
+    fn is_position_side_mismatch(message: &str) -> bool {
+        message
+            .to_ascii_lowercase()
+            .contains("position side does not match user's setting")
+    }
 }
 
 #[async_trait]
@@ -215,16 +258,20 @@ impl ExchangeClient for BinanceClient {
             params.insert("timeInForce".to_string(), "GTC".to_string());
             params.insert("price".to_string(), px.to_string());
         }
-        let query = self.signed_query(params)?;
-        let payload = self
-            .client
-            .post(format!("{}/fapi/v1/order?{}", self.base_url, query))
-            .header("X-MBX-APIKEY", &self.api_key)
-            .send()
-            .await?
-            .json::<Value>()
-            .await?;
-        if let Some(order_id) = payload["orderId"].as_i64() {
+        let mut payload = self.submit_order(params.clone()).await?;
+        let mut message = Self::extract_error_message(&payload);
+
+        if Self::extract_order_id(&payload).is_none() && Self::is_position_side_mismatch(&message) {
+            let mut retry_params = params;
+            retry_params.insert(
+                "positionSide".to_string(),
+                if side == "BUY" { "LONG" } else { "SHORT" }.to_string(),
+            );
+            payload = self.submit_order(retry_params).await?;
+            message = Self::extract_error_message(&payload);
+        }
+
+        if let Some(order_id) = Self::extract_order_id(&payload) {
             Ok(OrderResult {
                 success: true,
                 order_id: Some(order_id.to_string()),
@@ -234,12 +281,8 @@ impl ExchangeClient for BinanceClient {
             Ok(OrderResult {
                 success: false,
                 order_id: None,
-                message: payload["msg"]
-                    .as_str()
-                    .unwrap_or("Binance order failed")
-                    .to_string(),
+                message,
             })
         }
     }
 }
-
