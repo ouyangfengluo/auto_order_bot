@@ -104,6 +104,36 @@ impl GateioClient {
     fn auth_ok(&self) -> bool {
         !self.api_key.is_empty() && !self.api_secret.is_empty()
     }
+
+    fn format_error_message(status: reqwest::StatusCode, raw_text: &str, parsed: Option<&Value>) -> String {
+        if let Some(payload) = parsed {
+            if let Some(message) = payload["message"].as_str() {
+                let msg = message.trim();
+                if !msg.is_empty() {
+                    if let Some(label) = payload["label"].as_str() {
+                        let lb = label.trim();
+                        if !lb.is_empty() {
+                            return format!("{} | {} (HTTP {})", msg, lb, status.as_u16());
+                        }
+                    }
+                    return format!("{} (HTTP {})", msg, status.as_u16());
+                }
+            }
+            if let Some(label) = payload["label"].as_str() {
+                let lb = label.trim();
+                if !lb.is_empty() {
+                    return format!("{} (HTTP {})", lb, status.as_u16());
+                }
+            }
+        }
+
+        let text = raw_text.trim();
+        if !text.is_empty() {
+            return format!("{} (HTTP {})", text, status.as_u16());
+        }
+
+        format!("HTTP {}", status.as_u16())
+    }
 }
 
 #[async_trait]
@@ -232,8 +262,13 @@ impl ExchangeClient for GateioClient {
             request = request.header(k, v);
         }
         let resp = request.send().await?;
-        let data: Value = resp.json().await?;
-        if let Some(order_id) = data["id"].as_str() {
+        let status = resp.status();
+        let raw_text = resp.text().await.unwrap_or_default();
+        let data: Option<Value> = serde_json::from_str(&raw_text).ok();
+        if let Some(order_id) = data
+            .as_ref()
+            .and_then(|payload| payload["id"].as_str())
+        {
             Ok(OrderResult {
                 success: true,
                 order_id: Some(order_id.to_string()),
@@ -243,11 +278,7 @@ impl ExchangeClient for GateioClient {
             Ok(OrderResult {
                 success: false,
                 order_id: None,
-                message: data["message"]
-                    .as_str()
-                    .or_else(|| data["label"].as_str())
-                    .unwrap_or("Gate.io order failed")
-                    .to_string(),
+                message: Self::format_error_message(status, &raw_text, data.as_ref()),
             })
         }
     }
