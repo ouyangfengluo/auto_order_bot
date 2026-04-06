@@ -128,10 +128,47 @@ impl OkxClient {
         if payload["code"].as_str() == Some("0") {
             Ok(())
         } else {
-            Err(anyhow::anyhow!(
-                "{}",
-                payload["msg"].as_str().unwrap_or(default_message)
-            ))
+            Err(anyhow::anyhow!("{}", Self::extract_top_level_error(payload, default_message)))
+        }
+    }
+
+    fn extract_top_level_error(payload: &Value, default_message: &str) -> String {
+        let code = payload["code"].as_str().unwrap_or("");
+        let top_msg = payload["msg"].as_str().unwrap_or("").trim();
+
+        let data_row = payload["data"].as_array().and_then(|arr| arr.first());
+        let detail = data_row
+            .and_then(|row| row["sMsg"].as_str().or_else(|| row["msg"].as_str()))
+            .map(str::trim)
+            .filter(|msg| !msg.is_empty())
+            .unwrap_or("");
+
+        let base = if !detail.is_empty() {
+            if !top_msg.is_empty() && !top_msg.eq_ignore_ascii_case(detail) {
+                format!("{} | {}", detail, top_msg)
+            } else {
+                detail.to_string()
+            }
+        } else if !top_msg.is_empty() {
+            top_msg.to_string()
+        } else {
+            default_message.to_string()
+        };
+
+        if code.is_empty() {
+            base
+        } else {
+            format!("{} (code={})", base, code)
+        }
+    }
+
+    fn extract_row_error(row: &Value) -> String {
+        let s_code = row["sCode"].as_str().unwrap_or("");
+        let s_msg = row["sMsg"].as_str().unwrap_or("OKX order rejected").trim();
+        if s_code.is_empty() || s_code == "0" {
+            s_msg.to_string()
+        } else {
+            format!("{} (sCode={})", s_msg, s_code)
         }
     }
 }
@@ -299,7 +336,7 @@ impl ExchangeClient for OkxClient {
             return Ok(OrderResult {
                 success: false,
                 order_id: None,
-                message: payload["msg"].as_str().unwrap_or("OKX order failed").to_string(),
+                message: Self::extract_top_level_error(&payload, "OKX order failed"),
             });
         }
         let row = payload["data"].as_array().and_then(|arr| arr.first()).cloned().unwrap_or_default();
@@ -307,7 +344,7 @@ impl ExchangeClient for OkxClient {
             return Ok(OrderResult {
                 success: false,
                 order_id: None,
-                message: row["sMsg"].as_str().unwrap_or("OKX order rejected").to_string(),
+                message: Self::extract_row_error(&row),
             });
         }
         Ok(OrderResult {
@@ -317,4 +354,3 @@ impl ExchangeClient for OkxClient {
         })
     }
 }
-
