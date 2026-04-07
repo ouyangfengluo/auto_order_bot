@@ -171,6 +171,28 @@ impl OkxClient {
             format!("{} (sCode={})", s_msg, s_code)
         }
     }
+
+    async fn get_position_mode(&self) -> String {
+        if !self.auth_ok() {
+            return "net_mode".to_string();
+        }
+        let payload = match self
+            .request("GET", "/api/v5/account/config", None, None, true)
+            .await
+        {
+            Ok(value) => value,
+            Err(_) => return "net_mode".to_string(),
+        };
+        if payload["code"].as_str() != Some("0") {
+            return "net_mode".to_string();
+        }
+        payload["data"]
+            .as_array()
+            .and_then(|arr| arr.first())
+            .and_then(|row| row["posMode"].as_str())
+            .unwrap_or("net_mode")
+            .to_string()
+    }
 }
 
 #[async_trait]
@@ -295,12 +317,21 @@ impl ExchangeClient for OkxClient {
             });
         }
         let inst_id = self.to_instrument_id(&req.symbol);
+        let position_mode = self.get_position_mode().await;
+        let pos_side = if req.side.eq_ignore_ascii_case("short") || req.side.eq_ignore_ascii_case("sell") {
+            "short"
+        } else {
+            "long"
+        };
         if let Some(leverage) = req.leverage {
-            let body = json!({
+            let mut body = json!({
                 "instId": inst_id,
                 "lever": leverage.to_string(),
                 "mgnMode": self.trade_mode
             });
+            if position_mode == "long_short_mode" && self.trade_mode == "isolated" {
+                body["posSide"] = Value::String(pos_side.to_string());
+            }
             let _ = self
                 .request("POST", "/api/v5/account/set-leverage", None, Some(body), true)
                 .await?;
@@ -323,6 +354,9 @@ impl ExchangeClient for OkxClient {
             "ordType": order_type,
             "sz": req.quantity.to_string()
         });
+        if position_mode == "long_short_mode" {
+            body["posSide"] = Value::String(pos_side.to_string());
+        }
         if order_type == "limit" {
             let px = req
                 .price
