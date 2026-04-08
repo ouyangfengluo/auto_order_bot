@@ -17,6 +17,15 @@ pub struct PlaceOrderRequest {
     pub leverage: Option<i64>,
 }
 
+#[derive(Debug, Clone)]
+pub struct Candle {
+    pub timestamp: i64,
+    pub open: f64,
+    pub high: f64,
+    pub low: f64,
+    pub close: f64,
+}
+
 #[async_trait]
 pub trait ExchangeClient: Send + Sync {
     async fn list_contract_symbols(&self) -> anyhow::Result<Vec<String>>;
@@ -29,6 +38,21 @@ pub trait ExchangeClient: Send + Sync {
         price: Option<f64>,
     ) -> anyhow::Result<ResolvedQuantity>;
     async fn place_order(&self, req: PlaceOrderRequest) -> anyhow::Result<OrderResult>;
+    async fn fetch_recent_candles(&self, _symbol: &str, _limit: usize) -> anyhow::Result<Vec<Candle>> {
+        Err(anyhow::anyhow!("This exchange does not support candle queries"))
+    }
+    async fn fetch_available_balance(&self) -> anyhow::Result<f64> {
+        Err(anyhow::anyhow!("This exchange does not support balance queries"))
+    }
+    async fn fetch_position_size(&self, _symbol: &str) -> anyhow::Result<f64> {
+        Err(anyhow::anyhow!("This exchange does not support position queries"))
+    }
+    async fn place_reduce_only_order(&self, _req: PlaceOrderRequest) -> anyhow::Result<OrderResult> {
+        Err(anyhow::anyhow!("This exchange does not support reduce-only orders"))
+    }
+    async fn cancel_order(&self, _symbol: &str, _order_id: &str) -> anyhow::Result<()> {
+        Err(anyhow::anyhow!("This exchange does not support order cancellation"))
+    }
 }
 
 pub fn floor_to_step(value: f64, step: f64) -> f64 {
@@ -99,4 +123,3 @@ pub fn resolve_margin_quantity(
         market_id: None,
     })
 }
-

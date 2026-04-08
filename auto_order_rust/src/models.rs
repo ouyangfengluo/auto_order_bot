@@ -35,6 +35,8 @@ pub struct TaskItem {
 pub struct ConfigFile {
     #[serde(default)]
     pub tasks: Vec<TaskItem>,
+    #[serde(default)]
+    pub strategy_tasks: Vec<StrategyTask>,
     #[serde(default = "default_enabled")]
     pub enabled: bool,
 }
@@ -43,9 +45,30 @@ impl Default for ConfigFile {
     fn default() -> Self {
         Self {
             tasks: vec![],
+            strategy_tasks: vec![],
             enabled: true,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct StrategyTask {
+    #[serde(default)]
+    pub id: String,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default = "default_strategy_kind")]
+    pub strategy_kind: String,
+    #[serde(default = "default_exchange")]
+    pub exchange: String,
+    #[serde(default)]
+    pub symbol: String,
+    #[serde(default = "default_quantity")]
+    pub amount: f64,
+    #[serde(default)]
+    pub leverage: Option<i64>,
+    #[serde(default = "default_enabled")]
+    pub enabled: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -143,6 +166,10 @@ pub fn default_order_type() -> String {
 
 pub fn default_enabled() -> bool {
     true
+}
+
+pub fn default_strategy_kind() -> String {
+    "minute_drop_short".to_string()
 }
 
 pub fn normalize_exchange(exchange: Option<&str>, strict: bool) -> anyhow::Result<String> {
@@ -243,6 +270,35 @@ pub fn format_scheduled_at(value: Option<DateTime<Local>>) -> String {
     value
         .map(|dt| dt.with_nanosecond(0).unwrap_or(dt).format("%Y-%m-%dT%H:%M:%S").to_string())
         .unwrap_or_default()
+}
+
+pub fn normalize_strategy_task(task: &StrategyTask) -> anyhow::Result<StrategyTask> {
+    let exchange = normalize_exchange(Some(&task.exchange), false)?;
+    let strategy_kind = match task.strategy_kind.trim().to_lowercase().as_str() {
+        "minute_drop_short" | "" => "minute_drop_short".to_string(),
+        other => return Err(anyhow::anyhow!("Unsupported strategy kind: {}", other)),
+    };
+    let amount = if task.amount > 0.0 {
+        task.amount
+    } else {
+        default_quantity()
+    };
+    let symbol = normalize_symbol(Some(&task.symbol), &exchange);
+    let id = if task.id.trim().is_empty() {
+        format!("{}:{}:{}", strategy_kind, exchange, symbol)
+    } else {
+        task.id.trim().to_string()
+    };
+    Ok(StrategyTask {
+        id,
+        name: task.name.trim().to_string(),
+        strategy_kind,
+        exchange: exchange.clone(),
+        symbol,
+        amount,
+        leverage: task.leverage.map(|value| value.max(1)),
+        enabled: task.enabled,
+    })
 }
 
 pub fn normalize_task(task: &TaskItem) -> anyhow::Result<TaskItem> {

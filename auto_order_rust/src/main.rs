@@ -1,6 +1,7 @@
 mod config;
 mod exchanges;
 mod models;
+mod strategy;
 
 use std::{
     collections::HashMap,
@@ -30,10 +31,11 @@ use crate::exchanges::{
     PlaceOrderRequest,
 };
 use crate::models::{
-    normalize_exchange, normalize_quantity_mode, normalize_symbol, normalize_task, parse_scheduled_at,
-    ApiErrorBody, ConfigFile, ContractPayload, OrderResult, QuantityResolveRequest, ResolveQuantityResponse,
-    SUPPORTED_EXCHANGES, TaskItem,
+    normalize_exchange, normalize_quantity_mode, normalize_strategy_task, normalize_symbol, normalize_task,
+    parse_scheduled_at, ApiErrorBody, ConfigFile, ContractPayload, OrderResult, QuantityResolveRequest,
+    ResolveQuantityResponse, StrategyTask, SUPPORTED_EXCHANGES, TaskItem,
 };
+use crate::strategy::{tick_strategies, StrategyRuntimeStore};
 
 #[derive(Clone)]
 struct CachedSymbols {
@@ -49,6 +51,7 @@ struct AppState {
     clients: HashMap<String, Arc<dyn ExchangeClient>>,
     contract_cache: Arc<Mutex<HashMap<String, CachedSymbols>>>,
     scheduler_lock: Arc<Mutex<()>>,
+    strategy_runtime: StrategyRuntimeStore,
 }
 
 #[derive(serde::Deserialize)]
@@ -99,6 +102,7 @@ async fn main() {
         clients: build_clients(),
         contract_cache: Arc::new(Mutex::new(HashMap::new())),
         scheduler_lock: Arc::new(Mutex::new(())),
+        strategy_runtime: Arc::new(Mutex::new(HashMap::new())),
     };
 
     let scheduler_state = state.clone();
@@ -109,7 +113,9 @@ async fn main() {
     let app = Router::new()
         .route("/", get(index))
         .route("/api/config", get(get_config).post(update_config))
+        .route("/api/strategies", get(get_strategies).post(update_strategies))
         .route("/api/execute", post(execute_now))
+        .route("/api/strategies/execute", post(execute_strategy_now))
         .route("/api/resolve-quantity", post(resolve_quantity))
         .route("/api/exchanges", get(list_exchanges))
         .route("/api/contracts", get(list_contracts))
@@ -155,6 +161,8 @@ async fn tick_scheduler(state: &AppState) -> anyhow::Result<()> {
     if !config.enabled {
         return Ok(());
     }
+
+    tick_strategies(&config.strategy_tasks, &state.clients, &state.strategy_runtime).await?;
 
     let now = Local::now();
     let mut changed = false;
@@ -288,16 +296,88 @@ async fn update_config(State(state): State<AppState>, Json(mut body): Json<Confi
             }
         }
     }
+    let mut normalized_strategy_tasks = vec![];
+    for task in &body.strategy_tasks {
+        match normalize_strategy_task(task) {
+            Ok(item) => normalized_strategy_tasks.push(item),
+            Err(err) => {
+                return Err((
+                    StatusCode::BAD_REQUEST,
+                    Json(ApiErrorBody {
+                        detail: err.to_string(),
+                    }),
+                ))
+            }
+        }
+    }
     body.tasks = normalized_tasks;
+    body.strategy_tasks = normalized_strategy_tasks;
     if let Err(err) = save_config(&state.config_path, &body).await {
         return Err(internal_error(err));
     }
     Ok(Json(serde_json::json!({ "ok": true })))
 }
 
+async fn get_strategies(State(state): State<AppState>) -> ApiResult<Vec<StrategyTask>> {
+    let config = load_config(&state.config_path).await;
+    Ok(Json(config.strategy_tasks))
+}
+
+async fn update_strategies(
+    State(state): State<AppState>,
+    Json(body): Json<Vec<StrategyTask>>,
+) -> ApiResult<serde_json::Value> {
+    let mut config = load_config(&state.config_path).await;
+    let mut normalized_strategy_tasks = vec![];
+    for task in &body {
+        normalized_strategy_tasks.push(normalize_strategy_task(task).map_err(bad_request)?);
+    }
+    config.strategy_tasks = normalized_strategy_tasks;
+    save_config(&state.config_path, &config)
+        .await
+        .map_err(internal_error)?;
+    Ok(Json(serde_json::json!({ "ok": true })))
+}
+
 async fn execute_now(State(state): State<AppState>, Json(body): Json<TaskItem>) -> ApiResult<OrderResult> {
     let task = normalize_task(&body).map_err(bad_request)?;
     let result = run_task(&state, &task).await;
+    Ok(Json(result))
+}
+
+async fn execute_strategy_now(
+    State(state): State<AppState>,
+    Json(body): Json<StrategyTask>,
+) -> ApiResult<OrderResult> {
+    let task = normalize_strategy_task(&body).map_err(bad_request)?;
+    let client = state
+        .clients
+        .get(&task.exchange)
+        .ok_or_else(|| bad_request(anyhow::anyhow!("Unsupported exchange: {}", task.exchange)))?;
+    let available_balance = client.fetch_available_balance().await.map_err(bad_gateway)?;
+    let amount = task.amount.min(available_balance);
+    if amount <= 0.0 {
+        return Ok(Json(OrderResult {
+            success: false,
+            order_id: None,
+            message: "Available balance is 0, cannot open short".to_string(),
+        }));
+    }
+    let resolved = client
+        .resolve_order_quantity(&task.symbol, amount, "margin", task.leverage, None)
+        .await
+        .map_err(bad_gateway)?;
+    let result = client
+        .place_order(PlaceOrderRequest {
+            symbol: task.symbol,
+            side: "short".to_string(),
+            quantity: resolved.quantity,
+            price: None,
+            order_type: "market".to_string(),
+            leverage: task.leverage,
+        })
+        .await
+        .map_err(bad_gateway)?;
     Ok(Json(result))
 }
 
@@ -455,4 +535,3 @@ fn internal_error(err: anyhow::Error) -> (StatusCode, Json<ApiErrorBody>) {
         }),
     )
 }
-

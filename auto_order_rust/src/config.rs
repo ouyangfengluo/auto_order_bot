@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use tokio::fs;
 
-use crate::models::{normalize_task, ConfigFile};
+use crate::models::{normalize_strategy_task, normalize_task, ConfigFile};
 
 pub async fn load_config(path: &Path) -> ConfigFile {
     let content = match fs::read_to_string(path).await {
@@ -22,16 +22,25 @@ pub async fn load_config(path: &Path) -> ConfigFile {
         .iter()
         .filter_map(|task| normalize_task(task).ok())
         .collect();
+    config.strategy_tasks = config
+        .strategy_tasks
+        .iter()
+        .filter_map(|task| normalize_strategy_task(task).ok())
+        .collect();
     config
 }
 
 pub async fn save_config(path: &Path, config: &ConfigFile) -> anyhow::Result<()> {
     let mut normalized = ConfigFile {
         tasks: vec![],
+        strategy_tasks: vec![],
         enabled: config.enabled,
     };
     for task in &config.tasks {
         normalized.tasks.push(normalize_task(task)?);
+    }
+    for task in &config.strategy_tasks {
+        normalized.strategy_tasks.push(normalize_strategy_task(task)?);
     }
     let text = serde_json::to_string_pretty(&normalized)?;
     fs::write(path, text).await?;
@@ -43,4 +52,3 @@ pub fn default_config_path() -> PathBuf {
         .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from("config.json"))
 }
-
